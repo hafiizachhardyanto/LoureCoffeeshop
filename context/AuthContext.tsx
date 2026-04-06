@@ -8,6 +8,7 @@ import {
   doc, 
   getDoc,
   updateDoc,
+  signOut,
   type FirebaseUser 
 } from "@/lib/firebase";
 import { clearAuthCookies, getAuthCookies } from "@/lib/auth";
@@ -68,7 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
-      await firebaseSignOut(auth);
+      await signOut(auth);
       clearAuthCookies();
       localStorage.removeItem("sessionToken");
       setUser(null);
