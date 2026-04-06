@@ -77,8 +77,10 @@ export async function POST(request: NextRequest) {
     if (!emailResponse.ok) {
       const errorText = await emailResponse.text();
       console.error("EmailJS error:", errorText);
+      
       await deleteDoc(doc(db, "users", userId));
       await deleteDoc(doc(db, "otp", email));
+      
       return NextResponse.json(
         { success: false, message: "Gagal mengirim email OTP" },
         { status: 500 }
