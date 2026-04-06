@@ -15,14 +15,7 @@ export const metadata: Metadata = {
     default: "Loure Coffee Shop",
     template: "%s | Loure Coffee Shop",
   },
-  description: "Premium Coffee Experience - Nikmati kopi berkualitas dengan biji pilihan terbaik",
-  keywords: ["coffee", "kopi", "coffeeshop", "loure", "premium coffee"],
-  authors: [{ name: "Loure Coffee Shop" }],
-  openGraph: {
-    title: "Loure Coffee Shop",
-    description: "Premium Coffee Experience",
-    type: "website",
-  },
+  description: "Premium Coffee Experience",
 };
 
 export const viewport: Viewport = {
