@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db, collection, query, where, getDocs, updateDoc, doc } from "@/lib/firebase";
-import { generateOTP, sendOTP, storeOTP } from "@/lib/emailjs";
+import { db } from "@/lib/firebase";
+import { collection, query, where, getDocs, doc, updateDoc, setDoc } from "firebase/firestore";
+import crypto from "crypto";
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,7 +22,7 @@ export async function POST(request: NextRequest) {
     if (querySnapshot.empty) {
       return NextResponse.json(
         { success: false, message: "Email tidak terdaftar" },
-        { status: 404 }
+        { status: 400 }
       );
     }
 
@@ -29,42 +30,36 @@ export async function POST(request: NextRequest) {
     const userData = userDoc.data();
     const userId = userDoc.id;
 
-    if (!userData.isVerified) {
+    if (!userData.verified) {
       return NextResponse.json(
-        { success: false, message: "Akun belum terverifikasi" },
-        { status: 403 }
+        { success: false, message: "Akun belum diverifikasi" },
+        { status: 400 }
       );
     }
 
-    const otp = generateOTP();
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+
+    await setDoc(doc(db, "otp", email), {
+      userId,
+      otp,
+      otpExpiry,
+      attempts: 0,
+    });
 
     await updateDoc(doc(db, "users", userId), {
-      tempOTP: otp,
-      otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+      otp,
+      otpExpiry,
     });
-
-    storeOTP(email, otp);
-    const emailSent = await sendOTP({ 
-      email, 
-      name: userData.name, 
-      otp 
-    });
-
-    if (!emailSent) {
-      return NextResponse.json(
-        { success: false, message: "Gagal mengirim OTP" },
-        { status: 500 }
-      );
-    }
 
     return NextResponse.json({
       success: true,
-      message: "OTP telah dikirim ke email Anda",
       userId,
       role: userData.role,
+      message: "OTP telah dikirim ke email Anda",
     });
   } catch (error) {
-    console.error("Login Error:", error);
+    console.error("Login error:", error);
     return NextResponse.json(
       { success: false, message: "Terjadi kesalahan server" },
       { status: 500 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db, doc, getDoc, updateDoc, deleteField } from "@/lib/firebase";
-import { verifyOTP } from "@/lib/emailjs";
+import { db } from "@/lib/firebase";
+import { doc, getDoc, updateDoc, deleteDoc } from "firebase/firestore";
+import crypto from "crypto";
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,56 +15,78 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const userDoc = await getDoc(doc(db, "users", userId));
-    
-    if (!userDoc.exists()) {
-      return NextResponse.json(
-        { success: false, message: "User tidak ditemukan" },
-        { status: 404 }
-      );
-    }
+    const otpDocRef = doc(db, "otp", email);
+    const otpDoc = await getDoc(otpDocRef);
 
-    const userData = userDoc.data();
-    const now = new Date();
-    const otpExpiresAt = new Date(userData.otpExpiresAt);
-
-    if (now > otpExpiresAt) {
+    if (!otpDoc.exists()) {
       return NextResponse.json(
-        { success: false, message: "OTP sudah kadaluarsa" },
+        { success: false, message: "OTP tidak valid atau sudah kadaluarsa" },
         { status: 400 }
       );
     }
 
-    const isValid = verifyOTP(email, otp) || userData.tempOTP === otp;
+    const otpData = otpDoc.data();
 
-    if (!isValid) {
+    if (otpData.attempts >= 3) {
+      await deleteDoc(otpDocRef);
+      return NextResponse.json(
+        { success: false, message: "Terlalu banyak percobaan" },
+        { status: 400 }
+      );
+    }
+
+    if (otpData.otp !== otp) {
+      await updateDoc(otpDocRef, {
+        attempts: otpData.attempts + 1,
+      });
       return NextResponse.json(
         { success: false, message: "OTP salah" },
         { status: 400 }
       );
     }
 
-    const sessionToken = `session_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+    if (new Date() > otpData.otpExpiry.toDate()) {
+      await deleteDoc(otpDocRef);
+      return NextResponse.json(
+        { success: false, message: "OTP sudah kadaluarsa" },
+        { status: 400 }
+      );
+    }
 
-    await updateDoc(doc(db, "users", userId), {
-      lastLoginAt: new Date().toISOString(),
-      sessionToken,
-      tempOTP: deleteField(),
-      otpExpiresAt: deleteField(),
+    const userDocRef = doc(db, "users", userId);
+    const userDoc = await getDoc(userDocRef);
+
+    if (!userDoc.exists()) {
+      return NextResponse.json(
+        { success: false, message: "User tidak ditemukan" },
+        { status: 400 }
+      );
+    }
+
+    const userData = userDoc.data();
+
+    await updateDoc(userDocRef, {
+      otp: null,
+      otpExpiry: null,
+      lastLoginAt: new Date(),
     });
+
+    await deleteDoc(otpDocRef);
+
+    const sessionToken = crypto.randomBytes(32).toString("hex");
 
     return NextResponse.json({
       success: true,
-      message: "Login berhasil",
+      sessionToken,
       userId,
       role: userData.role,
       name: userData.name,
       phone: userData.phone,
       email: userData.email,
-      sessionToken,
+      message: "Login berhasil",
     });
   } catch (error) {
-    console.error("Verify Login Error:", error);
+    console.error("Verify login error:", error);
     return NextResponse.json(
       { success: false, message: "Terjadi kesalahan server" },
       { status: 500 }

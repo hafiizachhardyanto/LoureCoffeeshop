@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db, doc, getDoc, updateDoc, deleteDoc } from "@/lib/firebase";
-import { verifyOTP } from "@/lib/emailjs";
+import { db } from "@/lib/firebase";
+import { doc, getDoc, updateDoc, deleteDoc } from "firebase/firestore";
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,8 +14,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const otpDoc = await getDoc(doc(db, "otp_verifications", userId));
-    
+    const otpDocRef = doc(db, "otp", email);
+    const otpDoc = await getDoc(otpDocRef);
+
     if (!otpDoc.exists()) {
       return NextResponse.json(
         { success: false, message: "OTP tidak valid atau sudah kadaluarsa" },
@@ -24,40 +25,47 @@ export async function POST(request: NextRequest) {
     }
 
     const otpData = otpDoc.data();
-    const now = new Date();
-    const expiresAt = new Date(otpData.expiresAt);
 
-    if (now > expiresAt) {
-      await deleteDoc(doc(db, "otp_verifications", userId));
+    if (otpData.attempts >= 3) {
+      await deleteDoc(otpDocRef);
       return NextResponse.json(
-        { success: false, message: "OTP sudah kadaluarsa" },
+        { success: false, message: "Terlalu banyak percobaan. Silakan daftar ulang" },
         { status: 400 }
       );
     }
 
-    const isValid = verifyOTP(email, otp) || otpData.otp === otp;
-
-    if (!isValid) {
+    if (otpData.otp !== otp) {
+      await updateDoc(otpDocRef, {
+        attempts: otpData.attempts + 1,
+      });
       return NextResponse.json(
         { success: false, message: "OTP salah" },
         { status: 400 }
       );
     }
 
+    if (new Date() > otpData.otpExpiry.toDate()) {
+      await deleteDoc(otpDocRef);
+      return NextResponse.json(
+        { success: false, message: "OTP sudah kadaluarsa" },
+        { status: 400 }
+      );
+    }
+
     await updateDoc(doc(db, "users", userId), {
-      isVerified: true,
-      verifiedAt: new Date().toISOString(),
+      verified: true,
+      otp: null,
+      otpExpiry: null,
     });
 
-    await deleteDoc(doc(db, "otp_verifications", userId));
+    await deleteDoc(otpDocRef);
 
     return NextResponse.json({
       success: true,
       message: "Verifikasi berhasil",
-      userId,
     });
   } catch (error) {
-    console.error("Verify OTP Error:", error);
+    console.error("Verify OTP error:", error);
     return NextResponse.json(
       { success: false, message: "Terjadi kesalahan server" },
       { status: 500 }
