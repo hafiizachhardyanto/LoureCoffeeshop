@@ -118,54 +118,56 @@ export default function LoginPage() {
 
   if (step === "otp") {
     return (
-      <div className="card bg-white shadow-2xl">
-        <div className="card-body p-8">
-          <h2 className="text-2xl font-bold text-center text-blue-900 mb-2">
-            Verifikasi OTP
-          </h2>
-          <p className="text-center text-gray-600 mb-6">
-            Masukkan kode OTP yang dikirim ke {email}
-          </p>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <div className="card bg-white shadow-2xl w-full max-w-md">
+          <div className="card-body p-8">
+            <h2 className="text-2xl font-bold text-center text-blue-900 mb-2">
+              Verifikasi OTP
+            </h2>
+            <p className="text-center text-gray-600 mb-6">
+              Masukkan kode OTP yang dikirim ke {email}
+            </p>
 
-          {error && (
-            <div className="alert alert-error mb-4">
-              <span>{error}</span>
+            {error && (
+              <div className="alert alert-error mb-4">
+                <span>{error}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleVerifyOTP} className="space-y-4">
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text font-medium">Kode OTP</span>
+                </label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  className="input input-bordered text-center text-2xl tracking-widest"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                  placeholder="000000"
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="btn btn-primary btn-block"
+                disabled={loading || otp.length !== 6}
+              >
+                {loading ? <span className="loading loading-spinner"></span> : "Verifikasi & Masuk"}
+              </button>
+            </form>
+
+            <div className="mt-4 text-center">
+              <button
+                onClick={() => setStep("email")}
+                className="text-blue-600 hover:underline text-sm"
+              >
+                Kembali
+              </button>
             </div>
-          )}
-
-          <form onSubmit={handleVerifyOTP} className="space-y-4">
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text font-medium">Kode OTP</span>
-              </label>
-              <input
-                type="text"
-                inputMode="numeric"
-                maxLength={6}
-                className="input input-bordered text-center text-2xl tracking-widest"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-                placeholder="000000"
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="btn btn-primary btn-block"
-              disabled={loading || otp.length !== 6}
-            >
-              {loading ? <span className="loading loading-spinner"></span> : "Verifikasi & Masuk"}
-            </button>
-          </form>
-
-          <div className="mt-4 text-center">
-            <button
-              onClick={() => setStep("email")}
-              className="text-blue-600 hover:underline text-sm"
-            >
-              Kembali
-            </button>
           </div>
         </div>
       </div>
@@ -173,62 +175,64 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="card bg-white shadow-2xl">
-      <div className="card-body p-8">
-        <h2 className="text-2xl font-bold text-center text-blue-900 mb-2">
-          Selamat Datang Kembali
-        </h2>
-        <p className="text-center text-gray-600 mb-6">
-          Masuk ke akun Loure Coffee Shop Anda
-        </p>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <div className="card bg-white shadow-2xl w-full max-w-md">
+        <div className="card-body p-8">
+          <h2 className="text-2xl font-bold text-center text-blue-900 mb-2">
+            Selamat Datang Kembali
+          </h2>
+          <p className="text-center text-gray-600 mb-6">
+            Masuk ke akun Loure Coffee Shop Anda
+          </p>
 
-        {successMessage && (
-          <div className="alert alert-success mb-4">
-            <span>{successMessage}</span>
-          </div>
-        )}
+          {successMessage && (
+            <div className="alert alert-success mb-4">
+              <span>{successMessage}</span>
+            </div>
+          )}
 
-        {error && (
-          <div className="alert alert-error mb-4">
-            <span>{error}</span>
-          </div>
-        )}
+          {error && (
+            <div className="alert alert-error mb-4">
+              <span>{error}</span>
+            </div>
+          )}
 
-        <form onSubmit={handleSubmitEmail} className="space-y-4">
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text font-medium">Email</span>
-            </label>
-            <input
-              type="email"
-              className="input input-bordered"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="email@example.com"
-              required
-            />
-            <label className="label">
-              <span className="label-text-alt text-gray-500">OTP akan dikirim ke email ini</span>
-            </label>
-          </div>
+          <form onSubmit={handleSubmitEmail} className="space-y-4">
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text font-medium">Email</span>
+              </label>
+              <input
+                type="email"
+                className="input input-bordered"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="email@example.com"
+                required
+              />
+              <label className="label">
+                <span className="label-text-alt text-gray-500">OTP akan dikirim ke email ini</span>
+              </label>
+            </div>
 
-          <button
-            type="submit"
-            className="btn btn-primary btn-block"
-            disabled={loading}
-          >
-            {loading ? <span className="loading loading-spinner"></span> : "Kirim OTP"}
-          </button>
-        </form>
+            <button
+              type="submit"
+              className="btn btn-primary btn-block"
+              disabled={loading}
+            >
+              {loading ? <span className="loading loading-spinner"></span> : "Kirim OTP"}
+            </button>
+          </form>
 
-        <div className="divider my-6">atau</div>
+          <div className="divider my-6">atau</div>
 
-        <p className="text-center text-gray-600">
-          Belum punya akun?{" "}
-          <Link href="/register" className="text-blue-600 font-medium hover:underline">
-            Daftar sekarang
-          </Link>
-        </p>
+          <p className="text-center text-gray-600">
+            Belum punya akun?{" "}
+            <Link href="/register" className="text-blue-600 font-medium hover:underline">
+              Daftar sekarang
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );
