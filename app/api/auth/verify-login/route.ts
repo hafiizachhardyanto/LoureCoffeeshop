@@ -45,7 +45,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (new Date() > otpData.otpExpiry.toDate()) {
+    let expiryDate;
+    if (otpData.otpExpiry && typeof otpData.otpExpiry.toDate === "function") {
+      expiryDate = otpData.otpExpiry.toDate();
+    } else if (otpData.otpExpiry && otpData.otpExpiry.seconds) {
+      expiryDate = new Date(otpData.otpExpiry.seconds * 1000);
+    } else {
+      expiryDate = new Date(otpData.otpExpiry);
+    }
+
+    if (new Date() > expiryDate) {
       await deleteDoc(otpDocRef);
       return NextResponse.json(
         { success: false, message: "OTP sudah kadaluarsa" },

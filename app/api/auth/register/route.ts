@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/firebase";
-import { collection, doc, setDoc, query, where, getDocs } from "firebase/firestore";
+import { collection, doc, setDoc, query, where, getDocs, deleteDoc } from "firebase/firestore";
 import crypto from "crypto";
+
+const EMAILJS_SERVICE_ID = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID;
+const EMAILJS_TEMPLATE_ID = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID;
+const EMAILJS_PUBLIC_KEY = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY;
+const EMAILJS_PRIVATE_KEY = process.env.EMAILJS_PRIVATE_KEY;
 
 export async function POST(request: NextRequest) {
   try {
@@ -47,6 +52,38 @@ export async function POST(request: NextRequest) {
       otpExpiry,
       attempts: 0,
     });
+
+    const emailData = {
+      service_id: EMAILJS_SERVICE_ID,
+      template_id: EMAILJS_TEMPLATE_ID,
+      user_id: EMAILJS_PUBLIC_KEY,
+      accessToken: EMAILJS_PRIVATE_KEY,
+      template_params: {
+        email: email,
+        passcode: otp,
+        time: "10 menit",
+        company_name: "Loure Coffee Shop",
+      },
+    };
+
+    const emailResponse = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(emailData),
+    });
+
+    if (!emailResponse.ok) {
+      const errorText = await emailResponse.text();
+      console.error("EmailJS error:", errorText);
+      await deleteDoc(doc(db, "users", userId));
+      await deleteDoc(doc(db, "otp", email));
+      return NextResponse.json(
+        { success: false, message: "Gagal mengirim email OTP" },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
