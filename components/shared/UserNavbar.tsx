@@ -9,10 +9,10 @@ export default function UserNavbar() {
   const { totalItems } = useCart();
 
   return (
-    <nav className="navbar navbar-loure sticky top-0 z-40 shadow-lg">
+    <nav className="navbar bg-primary text-white sticky top-0 z-40 shadow-lg">
       <div className="container mx-auto px-4">
         <div className="flex-1">
-          <Link href="/menu" className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-3">
             <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
               <span className="text-blue-900 font-bold text-sm">L</span>
             </div>
@@ -21,11 +21,11 @@ export default function UserNavbar() {
         </div>
         
         <div className="flex-none gap-4">
-          <Link href="/menu" className="btn btn-ghost text-white">
+          <Link href="/menu" className="btn btn-ghost text-white hover:bg-white/20">
             Menu
           </Link>
           
-          <Link href="/checkout" className="btn btn-ghost text-white">
+          <Link href="/checkout" className="btn btn-ghost text-white hover:bg-white/20">
             <div className="indicator">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -36,7 +36,7 @@ export default function UserNavbar() {
             </div>
           </Link>
 
-          <Link href="/waiting" className="btn btn-ghost text-white">
+          <Link href="/waiting" className="btn btn-ghost text-white hover:bg-white/20">
             Pesanan
           </Link>
 

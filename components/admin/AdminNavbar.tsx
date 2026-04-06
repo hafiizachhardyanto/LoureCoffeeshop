@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 
@@ -8,10 +8,10 @@ export default function AdminNavbar() {
   const { user } = useAuth();
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  useState(() => {
+  useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
-  });
+  }, []);
 
   return (
     <header className="bg-white shadow-sm border-b px-6 py-4 flex justify-between items-center">

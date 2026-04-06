@@ -65,7 +65,7 @@ export default function AdminMenuPage() {
     <div className="page-transition space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-blue-900">Kelola Menu</h1>
-        <Link href="/menu/create" className="btn btn-primary">
+        <Link href="/admin/menu/create" className="btn btn-primary">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
@@ -161,7 +161,7 @@ export default function AdminMenuPage() {
                     <td className="text-right">
                       <div className="flex justify-end gap-2">
                         <Link 
-                          href={`/menu/edit/${item.id}`}
+                          href={`/admin/menu/edit/${item.id}`}
                           className="btn btn-sm btn-info text-white"
                         >
                           Edit
