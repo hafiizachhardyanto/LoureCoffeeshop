@@ -13,15 +13,9 @@ export default function PublicNavbar() {
         <div className="flex items-center gap-3">
           <Link href="/" className="flex items-center gap-3">
             <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center overflow-hidden">
-              <Image 
-                src="/favicon.ico" 
-                alt="Loure" 
-                width={32} 
-                height={32}
-                className="object-contain"
-              />
+              <span className="text-2xl font-bold" style={{ color: '#3b4cca' }}>L</span>
             </div>
-            <span className="text-xl font-bold text-white">LOURE.</span>
+            <span className="text-xl font-bold text-white tracking-wide">LOURE.</span>
           </Link>
         </div>
         <div className="flex items-center gap-2">
@@ -46,7 +40,7 @@ export default function PublicNavbar() {
             </>
           ) : (
             <>
-              <Link href="/auth/login" className="btn bg-white text-blue-900 hover:opacity-90">
+              <Link href="/auth/login" className="btn bg-white hover:opacity-90 font-medium" style={{ color: '#3b4cca' }}>
                 Masuk
               </Link>
               <Link href="/auth/register" className="btn btn-outline">
