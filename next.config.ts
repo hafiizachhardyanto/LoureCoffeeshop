@@ -15,6 +15,25 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["firebase", "@emailjs/browser", "xlsx"],
   },
+  async redirects() {
+    return [
+      {
+        source: "/login",
+        destination: "/auth/login",
+        permanent: true,
+      },
+      {
+        source: "/daftar",
+        destination: "/auth/register",
+        permanent: true,
+      },
+      {
+        source: "/register",
+        destination: "/auth/register",
+        permanent: true,
+      },
+    ];
+  },
   headers: async () => [
     {
       source: "/api/:path*",

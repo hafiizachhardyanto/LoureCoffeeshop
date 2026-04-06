@@ -12,12 +12,12 @@ export default function PublicNavbar() {
         <div className="flex-1">
           <Link href="/" className="flex items-center gap-3">
             <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
-              <span className="text-blue-900 font-bold text-sm">L</span>
+              <span className="text-primary font-bold text-lg">L</span>
             </div>
             <span className="text-xl font-bold">LOURE.</span>
           </Link>
         </div>
-        <div className="flex-none gap-4">
+        <div className="flex-none flex items-center gap-2">
           <Link href="/user/menu" className="btn btn-ghost text-white hover:bg-white/20">
             Menu
           </Link>
@@ -39,10 +39,10 @@ export default function PublicNavbar() {
             </>
           ) : (
             <>
-              <Link href="/auth/login" className="btn bg-white text-blue-900 hover:bg-blue-50 border-0 font-medium">
+              <Link href="/auth/login" className="btn bg-white text-primary hover:bg-blue-50 border-0 font-medium">
                 Masuk
               </Link>
-              <Link href="/auth/register" className="btn btn-outline border-white text-white hover:bg-white hover:text-blue-900 font-medium">
+              <Link href="/auth/register" className="btn btn-outline border-white text-white hover:bg-white hover:text-primary font-medium">
                 Daftar
               </Link>
             </>
