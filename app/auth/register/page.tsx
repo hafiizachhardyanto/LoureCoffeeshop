@@ -93,55 +93,51 @@ export default function RegisterPage() {
   if (step === "otp") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-        <div className="card bg-white shadow-2xl w-full max-w-md">
-          <div className="card-body p-8">
-            <h2 className="text-2xl font-bold text-center text-blue-900 mb-2">
-              Verifikasi OTP
-            </h2>
-            <p className="text-center text-gray-600 mb-6">
-              Masukkan kode OTP yang dikirim ke {formData.email}
-            </p>
+        <div className="card w-full max-w-md p-8 shadow-2xl">
+          <h2 className="text-2xl font-bold text-center text-blue-900 mb-2">
+            Verifikasi OTP
+          </h2>
+          <p className="text-center text-gray-600 mb-6">
+            Masukkan kode OTP yang dikirim ke {formData.email}
+          </p>
 
-            {error && (
-              <div className="alert alert-error mb-4">
-                <span>{error}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleVerifyOTP} className="space-y-4">
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text font-medium">Kode OTP</span>
-                </label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={6}
-                  className="input input-bordered text-center text-2xl tracking-widest"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-                  placeholder="000000"
-                  required
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="btn btn-primary btn-block"
-                disabled={loading || otp.length !== 6}
-              >
-                {loading ? <span className="loading loading-spinner"></span> : "Verifikasi"}
-              </button>
-            </form>
-
-            <div className="mt-4 text-center">
-              <button
-                onClick={() => setStep("form")}
-                className="text-blue-600 hover:underline text-sm"
-              >
-                Kembali ke form pendaftaran
-              </button>
+          {error && (
+            <div className="alert alert-error">
+              <span>{error}</span>
             </div>
+          )}
+
+          <form onSubmit={handleVerifyOTP} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Kode OTP</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                className="input text-center text-2xl tracking-widest"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                placeholder="000000"
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="btn btn-primary btn-block"
+              disabled={loading || otp.length !== 6}
+            >
+              {loading ? <span className="loading-spinner"></span> : "Verifikasi"}
+            </button>
+          </form>
+
+          <div className="text-center mt-4">
+            <button
+              onClick={() => setStep("form")}
+              className="text-sm text-gray-600 hover:underline"
+            >
+              Kembali ke form pendaftaran
+            </button>
           </div>
         </div>
       </div>
@@ -150,85 +146,75 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="card bg-white shadow-2xl w-full max-w-md">
-        <div className="card-body p-8">
-          <h2 className="text-2xl font-bold text-center text-blue-900 mb-2">
-            Daftar Akun
-          </h2>
-          <p className="text-center text-gray-600 mb-6">
-            Bergabung dengan Loure Coffee Shop
-          </p>
+      <div className="card w-full max-w-md p-8 shadow-2xl">
+        <h2 className="text-2xl font-bold text-center text-blue-900 mb-2">
+          Daftar Akun
+        </h2>
+        <p className="text-center text-gray-600 mb-6">
+          Bergabung dengan Loure Coffee Shop
+        </p>
 
-          {error && (
-            <div className="alert alert-error mb-4">
-              <span>{error}</span>
-            </div>
-          )}
+        {error && (
+          <div className="alert alert-error">
+            <span>{error}</span>
+          </div>
+        )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text font-medium">Nama Lengkap</span>
-              </label>
-              <input
-                type="text"
-                className="input input-bordered"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Masukkan nama Anda"
-                required
-              />
-            </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Nama Lengkap</label>
+            <input
+              type="text"
+              className="input"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder="Masukkan nama Anda"
+              required
+            />
+          </div>
 
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text font-medium">Nomor HP</span>
-              </label>
-              <input
-                type="tel"
-                className="input input-bordered"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                placeholder="08xxxxxxxxxx"
-                required
-              />
-            </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Nomor HP</label>
+            <input
+              type="tel"
+              className="input"
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              placeholder="08xxxxxxxxxx"
+              required
+            />
+          </div>
 
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text font-medium">Email</span>
-              </label>
-              <input
-                type="email"
-                className="input input-bordered"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="email@example.com"
-                required
-              />
-              <label className="label">
-                <span className="label-text-alt text-gray-500">OTP akan dikirim ke email ini</span>
-              </label>
-            </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Email</label>
+            <input
+              type="email"
+              className="input"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              placeholder="email@example.com"
+              required
+            />
+            <p className="text-sm text-gray-600 mt-1">OTP akan dikirim ke email ini</p>
+          </div>
 
-            <button
-              type="submit"
-              className="btn btn-primary btn-block"
-              disabled={loading}
-            >
-              {loading ? <span className="loading loading-spinner"></span> : "Daftar"}
-            </button>
-          </form>
+          <button
+            type="submit"
+            className="btn btn-primary btn-block"
+            disabled={loading}
+          >
+            {loading ? <span className="loading-spinner"></span> : "Daftar"}
+          </button>
+        </form>
 
-          <div className="divider my-6">atau</div>
+        <div className="divider">atau</div>
 
-          <p className="text-center text-gray-600">
-            Sudah punya akun?{" "}
-            <Link href="/auth/login" className="text-blue-600 font-medium hover:underline">
-              Masuk sekarang
-            </Link>
-          </p>
-        </div>
+        <p className="text-center text-gray-600">
+          Sudah punya akun?{" "}
+          <Link href="/auth/login" className="text-blue-900 font-medium hover:underline">
+            Masuk sekarang
+          </Link>
+        </p>
       </div>
     </div>
   );
