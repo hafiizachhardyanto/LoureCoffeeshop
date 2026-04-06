@@ -5,7 +5,6 @@ const publicRoutes = ["/", "/menu", "/login", "/register"];
 const userRoutes = ["/menu", "/checkout", "/waiting", "/profile"];
 const adminRoutes = [
   "/dashboard",
-  "/menu",
   "/orders",
   "/queue",
   "/reports",
@@ -22,7 +21,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (pathname.startsWith("/_next") || pathname.startsWith("/static")) {
+  if (pathname.startsWith("/_next") || pathname.startsWith("/static") || pathname.includes(".")) {
     return NextResponse.next();
   }
 
@@ -40,17 +39,9 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  const isUserRoute = userRoutes.some((route) => pathname.startsWith(route));
   const isAdminRoute = adminRoutes.some((route) => pathname.startsWith(route));
 
   if (isAdminRoute && userRole !== "admin") {
-    return NextResponse.redirect(new URL("/menu", request.url));
-  }
-
-  if (pathname === "/login" || pathname === "/register") {
-    if (userRole === "admin") {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
-    }
     return NextResponse.redirect(new URL("/menu", request.url));
   }
 

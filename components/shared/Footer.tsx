@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function Footer() {
   return (
-    <footer className="bg-blue-900 text-white py-10">
+    <footer className="bg-blue-900 text-white py-10 mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
@@ -20,10 +20,10 @@ export default function Footer() {
           <div>
             <h4 className="font-bold mb-4">Tautan Cepat</h4>
             <ul className="space-y-2 text-blue-200 text-sm">
-              <li><Link href="/" className="hover:text-white">Beranda</Link></li>
-              <li><Link href="/menu" className="hover:text-white">Menu</Link></li>
-              <li><Link href="/login" className="hover:text-white">Masuk</Link></li>
-              <li><Link href="/register" className="hover:text-white">Daftar</Link></li>
+              <li><Link href="/" className="hover:text-white transition-colors">Beranda</Link></li>
+              <li><Link href="/menu" className="hover:text-white transition-colors">Menu</Link></li>
+              <li><Link href="/login" className="hover:text-white transition-colors">Masuk</Link></li>
+              <li><Link href="/register" className="hover:text-white transition-colors">Daftar</Link></li>
             </ul>
           </div>
           

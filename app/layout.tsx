@@ -5,6 +5,8 @@ import { AuthProvider } from "@/context/AuthContext";
 import { CartProvider } from "@/context/CartContext";
 import { NetworkProvider } from "@/context/NetworkContext";
 import ErrorBoundary from "@/components/shared/ErrorBoundary";
+import PublicNavbar from "@/components/shared/PublicNavbar";
+import Footer from "@/components/shared/Footer";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -42,7 +44,13 @@ export default function RootLayout({
           <NetworkProvider>
             <AuthProvider>
               <CartProvider>
-                {children}
+                <div className="min-h-screen flex flex-col">
+                  <PublicNavbar />
+                  <main className="flex-grow">
+                    {children}
+                  </main>
+                  <Footer />
+                </div>
               </CartProvider>
             </AuthProvider>
           </NetworkProvider>

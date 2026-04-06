@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
+import { useAuth } from "@/context/AuthContext";
 
 export default function PublicNavbar() {
+  const { user, isAdmin } = useAuth();
+
   return (
-    <nav className="navbar navbar-loure sticky top-0 z-40 shadow-lg">
+    <nav className="navbar bg-primary text-white sticky top-0 z-40 shadow-lg">
       <div className="container mx-auto px-4">
         <div className="flex-1">
           <Link href="/" className="flex items-center gap-3">
@@ -16,15 +18,35 @@ export default function PublicNavbar() {
           </Link>
         </div>
         <div className="flex-none gap-4">
-          <Link href="/menu" className="btn btn-ghost text-white">
+          <Link href="/menu" className="btn btn-ghost text-white hover:bg-white/20">
             Menu
           </Link>
-          <Link href="/login" className="btn bg-white text-blue-900 hover:bg-blue-50 border-0">
-            Masuk
-          </Link>
-          <Link href="/register" className="btn btn-outline border-white text-white hover:bg-white hover:text-blue-900">
-            Daftar
-          </Link>
+          
+          {user ? (
+            <>
+              {isAdmin ? (
+                <Link href="/dashboard" className="btn btn-ghost text-white hover:bg-white/20">
+                  Dashboard
+                </Link>
+              ) : (
+                <Link href="/checkout" className="btn btn-ghost text-white hover:bg-white/20">
+                  Keranjang
+                </Link>
+              )}
+              <Link href="/profile" className="btn btn-ghost text-white hover:bg-white/20">
+                Profil
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link href="/login" className="btn bg-white text-blue-900 hover:bg-blue-50 border-0 font-medium">
+                Masuk
+              </Link>
+              <Link href="/register" className="btn btn-outline border-white text-white hover:bg-white hover:text-blue-900 font-medium">
+                Daftar
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </nav>
