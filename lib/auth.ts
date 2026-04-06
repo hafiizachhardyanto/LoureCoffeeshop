@@ -1,4 +1,4 @@
-import { db, doc, getDoc } from "@/lib/firebase";
+import { db, collection, query, where, getDocs, doc, getDoc } from "@/lib/firebase";
 import type { User } from "@/types";
 
 export async function validateSession(sessionToken: string): Promise<User | null> {

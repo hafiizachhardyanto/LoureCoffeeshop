@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db, collection, query, where, orderBy, getDocs, doc, updateDoc } from "@/lib/firebase";
+import { db, collection, query, where, orderBy, getDocs } from "@/lib/firebase";
+import type { Order } from "@/types";
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,10 +21,10 @@ export async function GET(request: NextRequest) {
     }
 
     const querySnapshot = await getDocs(q);
-    let orders = querySnapshot.docs.map((doc) => ({
+    let orders: Order[] = querySnapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
-    }));
+    })) as Order[];
 
     if (dateFrom && dateTo) {
       const fromDate = new Date(dateFrom);

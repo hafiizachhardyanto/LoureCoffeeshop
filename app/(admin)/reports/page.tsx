@@ -3,14 +3,14 @@
 import { useState, useEffect } from "react";
 import * as XLSX from "xlsx";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import type { Order } from "@/types";
+import type { Order, DailyReport, MonthlyReport } from "@/types";
 
 export default function ReportsPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [reportType, setReportType] = useState("daily");
+  const [reportType, setReportType] = useState<"daily" | "monthly">("daily");
 
   useEffect(() => {
     const today = new Date();
@@ -44,9 +44,9 @@ export default function ReportsPage() {
     return orderDate >= from && orderDate <= to && order.status === "completed";
   });
 
-  const generateReportData = () => {
+  const generateReportData = (): DailyReport[] | MonthlyReport[] => {
     if (reportType === "daily") {
-      const grouped: Record<string, { date: string; orders: number; revenue: number; items: number }> = {};
+      const grouped: Record<string, DailyReport> = {};
       
       filteredOrders.forEach((order) => {
         const date = new Date(order.createdAt).toISOString().split("T")[0];
@@ -60,7 +60,7 @@ export default function ReportsPage() {
 
       return Object.values(grouped).sort((a, b) => a.date.localeCompare(b.date));
     } else {
-      const grouped: Record<string, { month: string; orders: number; revenue: number; items: number }> = {};
+      const grouped: Record<string, MonthlyReport> = {};
       
       filteredOrders.forEach((order) => {
         const date = new Date(order.createdAt);
@@ -84,7 +84,7 @@ export default function ReportsPage() {
     const totalRevenue = data.reduce((sum, d) => sum + d.revenue, 0);
     const totalOrders = data.reduce((sum, d) => sum + d.orders, 0);
     
-    const worksheetData = [
+    const worksheetData: (string | number)[][] = [
       ["LAPORAN LOURE COFFEE SHOP"],
       ["Periode:", `${dateFrom} s/d ${dateTo}`],
       ["Tipe:", reportType === "daily" ? "Harian" : "Bulanan"],
@@ -93,7 +93,7 @@ export default function ReportsPage() {
         ? ["Tanggal", "Jumlah Pesanan", "Total Item", "Pendapatan"]
         : ["Bulan", "Jumlah Pesanan", "Total Item", "Pendapatan"],
       ...data.map((row) => [
-        reportType === "daily" ? row.date : row.month,
+        reportType === "daily" ? (row as DailyReport).date : (row as MonthlyReport).month,
         row.orders,
         row.items,
         row.revenue,
@@ -157,7 +157,7 @@ export default function ReportsPage() {
             <select
               className="select select-bordered"
               value={reportType}
-              onChange={(e) => setReportType(e.target.value)}
+              onChange={(e) => setReportType(e.target.value as "daily" | "monthly")}
             >
               <option value="daily">Harian</option>
               <option value="monthly">Bulanan</option>
@@ -221,8 +221,8 @@ export default function ReportsPage() {
                   <tr key={idx}>
                     <td className="font-medium">
                       {reportType === "daily" 
-                        ? formatDate(row.date)
-                        : row.month
+                        ? formatDate((row as DailyReport).date)
+                        : (row as MonthlyReport).month
                       }
                     </td>
                     <td className="text-right">{row.orders}</td>
