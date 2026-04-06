@@ -40,6 +40,6 @@ const config: Config = {
     ],
     defaultTheme: "loure",
   },
-};
+} as Config;
 
 export default config;
