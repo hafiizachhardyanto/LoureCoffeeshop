@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, doc, getDoc, updateDoc, deleteDoc } from "@/lib/firebase";
+import type { MenuItem } from "@/types";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
-    const docSnap = await getDoc(doc(db, "menu", id));
+    const { id } = await params;
 
+    const docSnap = await getDoc(doc(db, "menu", id));
+    
     if (!docSnap.exists()) {
       return NextResponse.json(
         { success: false, message: "Menu tidak ditemukan" },
@@ -18,10 +20,10 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      data: { id: docSnap.id, ...docSnap.data() },
+      data: { id: docSnap.id, ...docSnap.data() } as MenuItem,
     });
   } catch (error) {
-    console.error("Get Menu Item Error:", error);
+    console.error("Get Menu Error:", error);
     return NextResponse.json(
       { success: false, message: "Terjadi kesalahan server" },
       { status: 500 }
@@ -31,10 +33,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
 
     await updateDoc(doc(db, "menu", id), {
@@ -49,7 +51,7 @@ export async function PUT(
   } catch (error) {
     console.error("Update Menu Error:", error);
     return NextResponse.json(
-      { success: false, message: "Terjadi kesalahan server" },
+      { success: false, message: "Gagal mengupdate menu" },
       { status: 500 }
     );
   }
@@ -57,10 +59,11 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
+
     await deleteDoc(doc(db, "menu", id));
 
     return NextResponse.json({
@@ -70,7 +73,7 @@ export async function DELETE(
   } catch (error) {
     console.error("Delete Menu Error:", error);
     return NextResponse.json(
-      { success: false, message: "Terjadi kesalahan server" },
+      { success: false, message: "Gagal menghapus menu" },
       { status: 500 }
     );
   }
