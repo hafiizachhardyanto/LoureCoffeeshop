@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const publicRoutes = ["/", "/menu", "/login", "/register"];
+const publicRoutes = ["/", "/menu", "/auth/login", "/auth/register", "/login", "/register", "/daftar"];
 const userRoutes = ["/menu", "/checkout", "/waiting", "/profile"];
 const adminRoutes = [
   "/dashboard",
@@ -34,7 +34,7 @@ export function middleware(request: NextRequest) {
   }
 
   if (!sessionToken) {
-    const url = new URL("/login", request.url);
+    const url = new URL("/auth/login", request.url);
     url.searchParams.set("redirect", pathname);
     return NextResponse.redirect(url);
   }
