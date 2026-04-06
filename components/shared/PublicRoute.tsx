@@ -22,9 +22,9 @@ export default function PublicRoute({
 
     if (user && redirectAuthenticated) {
       if (isAdmin) {
-        router.push("/dashboard");
+        router.push("/admin/dashboard");
       } else {
-        router.push("/menu");
+        router.push("/user/menu");
       }
     }
   }, [user, loading, isAdmin, router, redirectAuthenticated]);

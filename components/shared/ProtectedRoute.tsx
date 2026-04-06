@@ -23,14 +23,14 @@ export default function ProtectedRoute({
     if (loading) return;
 
     if (!user) {
-      const redirectUrl = `/login?redirect=${encodeURIComponent(pathname)}`;
+      const redirectUrl = `/auth/login?redirect=${encodeURIComponent(pathname)}`;
       router.push(redirectUrl);
       return;
     }
 
     if (allowedRoles.includes("admin") && !allowedRoles.includes("user")) {
       if (!isAdmin) {
-        router.push("/menu");
+        router.push("/user/menu");
         return;
       }
     }

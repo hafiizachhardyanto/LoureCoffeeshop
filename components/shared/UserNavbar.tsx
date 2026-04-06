@@ -21,11 +21,11 @@ export default function UserNavbar() {
         </div>
         
         <div className="flex-none gap-4">
-          <Link href="/menu" className="btn btn-ghost text-white hover:bg-white/20">
+          <Link href="/user/menu" className="btn btn-ghost text-white hover:bg-white/20">
             Menu
           </Link>
           
-          <Link href="/checkout" className="btn btn-ghost text-white hover:bg-white/20">
+          <Link href="/user/checkout" className="btn btn-ghost text-white hover:bg-white/20">
             <div className="indicator">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -36,7 +36,7 @@ export default function UserNavbar() {
             </div>
           </Link>
 
-          <Link href="/waiting" className="btn btn-ghost text-white hover:bg-white/20">
+          <Link href="/user/waiting" className="btn btn-ghost text-white hover:bg-white/20">
             Pesanan
           </Link>
 
@@ -50,7 +50,7 @@ export default function UserNavbar() {
               <li className="px-4 py-2 text-sm text-gray-500">
                 {user?.name}
               </li>
-              <li><Link href="/profile">Profil</Link></li>
+              <li><Link href="/user/profile">Profil</Link></li>
               <li><button onClick={logout}>Keluar</button></li>
             </ul>
           </div>

@@ -74,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem("sessionToken");
       setUser(null);
       setFirebaseUser(null);
-      window.location.href = "/login";
+      window.location.href = "/auth/login";
     } catch (error) {
       console.error("Logout error:", error);
     }

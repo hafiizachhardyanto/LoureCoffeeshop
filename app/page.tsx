@@ -1,5 +1,3 @@
-import Image from "next/image";
-
 export default function Home() {
   return (
     <div className="min-h-screen bg-base-100 font-sans">
@@ -20,13 +18,13 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row gap-4 mt-4">
             <a
               className="btn btn-primary btn-lg rounded-full px-8 shadow-lg hover:shadow-xl transition-all"
-              href="/menu"
+              href="/user/menu"
             >
               View Menu
             </a>
             <a
               className="btn btn-outline btn-lg rounded-full px-8 border-2 hover:bg-neutral hover:text-white transition-all"
-              href="/login"
+              href="/auth/login"
             >
               Login
             </a>

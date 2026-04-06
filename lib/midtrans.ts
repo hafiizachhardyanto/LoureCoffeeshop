@@ -1,12 +1,11 @@
-// @ts-nocheck
-import midtransClient from "midtrans-client";
+import midtransClient from 'midtrans-client';
 
-const isProduction = process.env.NODE_ENV === "production";
+const isProduction = process.env.NODE_ENV === 'production';
 
 const snap = new midtransClient.Snap({
   isProduction: isProduction,
-  serverKey: process.env.MIDTRANS_SERVER_KEY || "",
-  clientKey: process.env.MIDTRANS_CLIENT_KEY || "",
+  serverKey: process.env.MIDTRANS_SERVER_KEY || '',
+  clientKey: process.env.MIDTRANS_CLIENT_KEY || '',
 });
 
 export async function createTransaction(params: {
@@ -39,7 +38,7 @@ export async function createTransaction(params: {
         price: item.price,
         quantity: item.quantity,
       })),
-      enabled_payments: ["gopay", "shopeepay", "qris"],
+      enabled_payments: ['gopay', 'shopeepay', 'qris'],
     };
 
     const transaction = await snap.createTransaction(parameter);
@@ -48,7 +47,7 @@ export async function createTransaction(params: {
       redirect_url: transaction.redirect_url,
     };
   } catch (error) {
-    console.error("Midtrans Error:", error);
+    console.error('Midtrans Error:', error);
     return null;
   }
 }
@@ -58,10 +57,10 @@ export async function checkTransactionStatus(orderId: string): Promise<{
   transaction_status: string;
 } | null> {
   try {
-    const status = await snap.transaction.status(orderId);
+    const status = await (snap as any).transaction.status(orderId);
     return status;
   } catch (error) {
-    console.error("Midtrans Status Error:", error);
+    console.error('Midtrans Status Error:', error);
     return null;
   }
 }

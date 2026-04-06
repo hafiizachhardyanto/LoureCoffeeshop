@@ -18,31 +18,31 @@ export default function PublicNavbar() {
           </Link>
         </div>
         <div className="flex-none gap-4">
-          <Link href="/menu" className="btn btn-ghost text-white hover:bg-white/20">
+          <Link href="/user/menu" className="btn btn-ghost text-white hover:bg-white/20">
             Menu
           </Link>
           
           {user ? (
             <>
               {isAdmin ? (
-                <Link href="/dashboard" className="btn btn-ghost text-white hover:bg-white/20">
+                <Link href="/admin/dashboard" className="btn btn-ghost text-white hover:bg-white/20">
                   Dashboard
                 </Link>
               ) : (
-                <Link href="/checkout" className="btn btn-ghost text-white hover:bg-white/20">
+                <Link href="/user/checkout" className="btn btn-ghost text-white hover:bg-white/20">
                   Keranjang
                 </Link>
               )}
-              <Link href="/profile" className="btn btn-ghost text-white hover:bg-white/20">
+              <Link href="/user/profile" className="btn btn-ghost text-white hover:bg-white/20">
                 Profil
               </Link>
             </>
           ) : (
             <>
-              <Link href="/login" className="btn bg-white text-blue-900 hover:bg-blue-50 border-0 font-medium">
+              <Link href="/auth/login" className="btn bg-white text-blue-900 hover:bg-blue-50 border-0 font-medium">
                 Masuk
               </Link>
-              <Link href="/register" className="btn btn-outline border-white text-white hover:bg-white hover:text-blue-900 font-medium">
+              <Link href="/auth/register" className="btn btn-outline border-white text-white hover:bg-white hover:text-blue-900 font-medium">
                 Daftar
               </Link>
             </>

@@ -21,9 +21,9 @@ export default function Footer() {
             <h4 className="font-bold mb-4">Tautan Cepat</h4>
             <ul className="space-y-2 text-blue-200 text-sm">
               <li><Link href="/" className="hover:text-white transition-colors">Beranda</Link></li>
-              <li><Link href="/menu" className="hover:text-white transition-colors">Menu</Link></li>
-              <li><Link href="/login" className="hover:text-white transition-colors">Masuk</Link></li>
-              <li><Link href="/register" className="hover:text-white transition-colors">Daftar</Link></li>
+              <li><Link href="/user/menu" className="hover:text-white transition-colors">Menu</Link></li>
+              <li><Link href="/auth/login" className="hover:text-white transition-colors">Masuk</Link></li>
+              <li><Link href="/auth/register" className="hover:text-white transition-colors">Daftar</Link></li>
             </ul>
           </div>
           

@@ -33,7 +33,7 @@ export default function AdminNavbar() {
       
       <div className="flex items-center gap-4">
         <Link 
-          href="/profile" 
+          href="/user/profile" 
           className="btn btn-ghost btn-sm"
         >
           Profil
