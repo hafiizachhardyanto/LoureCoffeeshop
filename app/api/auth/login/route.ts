@@ -141,6 +141,8 @@ export async function POST(request: NextRequest) {
       },
     };
 
+    console.log("Sending email with data:", JSON.stringify(emailData, null, 2));
+
     const emailResponse = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
       method: "POST",
       headers: {
@@ -149,14 +151,20 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(emailData),
     });
 
+    console.log("EmailJS response status:", emailResponse.status);
+
     if (!emailResponse.ok) {
       const errorText = await emailResponse.text();
-      console.error("EmailJS error:", errorText);
+      console.error("EmailJS error response:", errorText);
+      
       return NextResponse.json(
-        { success: false, message: "Gagal mengirim email OTP" },
+        { success: false, message: `Gagal mengirim email OTP: ${errorText}` },
         { status: 500 }
       );
     }
+
+    const responseText = await emailResponse.text();
+    console.log("EmailJS success response:", responseText);
 
     return NextResponse.json({
       success: true,
