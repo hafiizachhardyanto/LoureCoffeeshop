@@ -316,11 +316,11 @@
     }
   }
   
-  .hover\\:underline:hover {
+  .hover\:underline:hover {
     text-decoration: underline;
   }
   
-  .hover\\:opacity-90:hover {
+  .hover\:opacity-90:hover {
     opacity: 0.9;
   }
 }
