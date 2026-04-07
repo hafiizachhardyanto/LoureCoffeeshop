@@ -46,6 +46,19 @@ async function firestoreDelete(collection: string, docId: string) {
   return response.ok;
 }
 
+function getStringValue(field: any): string | null {
+  if (!field) return null;
+  if (field.stringValue !== undefined) return field.stringValue;
+  return null;
+}
+
+function getIntegerValue(field: any): number {
+  if (!field) return 0;
+  if (field.integerValue !== undefined) return parseInt(field.integerValue);
+  if (field.doubleValue !== undefined) return Math.floor(field.doubleValue);
+  return 0;
+}
+
 export async function POST(request: NextRequest) {
   try {
     let body;
@@ -79,7 +92,7 @@ export async function POST(request: NextRequest) {
     }
 
     const otpData = otpDoc.fields;
-    const attempts = parseInt(otpData.attempts?.integerValue || "0");
+    const attempts = getIntegerValue(otpData.attempts);
 
     if (attempts >= 3) {
       await firestoreDelete("otp", email);
@@ -89,7 +102,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const storedOtp = otpData.otp?.stringValue;
+    const storedOtp = getStringValue(otpData.otp);
 
     if (storedOtp !== otp) {
       await firestoreUpdate("otp", email, {
@@ -101,7 +114,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const expiryDate = new Date(otpData.otpExpiry?.stringValue || otpData.otpExpiry?.timestampValue);
+    const expiryDateStr = getStringValue(otpData.otpExpiry);
+    let expiryDate: Date;
+
+    if (otpData.otpExpiry?.timestampValue) {
+      expiryDate = new Date(otpData.otpExpiry.timestampValue);
+    } else if (expiryDateStr) {
+      expiryDate = new Date(expiryDateStr);
+    } else {
+      expiryDate = new Date();
+    }
 
     if (new Date() > expiryDate) {
       await firestoreDelete("otp", email);
@@ -138,10 +160,10 @@ export async function POST(request: NextRequest) {
       success: true,
       sessionToken,
       userId,
-      role: userData.role?.stringValue || "cashier",
-      name: userData.name?.stringValue,
-      phone: userData.phone?.stringValue,
-      email: userData.email?.stringValue,
+      role: getStringValue(userData.role) || "cashier",
+      name: getStringValue(userData.name),
+      phone: getStringValue(userData.phone),
+      email: getStringValue(userData.email),
       message: "Login berhasil",
     });
   } catch (error) {

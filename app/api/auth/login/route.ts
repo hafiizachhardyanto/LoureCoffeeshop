@@ -74,6 +74,20 @@ async function firestoreUpdate(collection: string, docId: string, data: any) {
   return response.json();
 }
 
+function getBooleanValue(field: any): boolean | null {
+  if (!field) return null;
+  if (field.booleanValue !== undefined) return field.booleanValue;
+  if (field.stringValue === "true") return true;
+  if (field.stringValue === "false") return false;
+  return null;
+}
+
+function getStringValue(field: any): string | null {
+  if (!field) return null;
+  if (field.stringValue !== undefined) return field.stringValue;
+  return null;
+}
+
 export async function POST(request: NextRequest) {
   try {
     let body;
@@ -99,7 +113,7 @@ export async function POST(request: NextRequest) {
 
     const queryResult = await firestoreQuery("users", "email", "==", email);
 
-    console.log("Query result:", JSON.stringify(queryResult, null, 2));
+    console.log("Query result length:", queryResult?.length);
 
     if (!queryResult || queryResult.length === 0 || !queryResult[0].document) {
       return NextResponse.json(
@@ -113,9 +127,16 @@ export async function POST(request: NextRequest) {
     const userId = userDoc.name.split('/').pop();
 
     console.log("User found:", userId);
-    console.log("User verified status:", userData.verified);
+    console.log("User data fields:", Object.keys(userData));
+    console.log("Verified field:", JSON.stringify(userData.verified));
 
-    if (userData.verified?.booleanValue === false) {
+    const verified = getBooleanValue(userData.verified);
+    const emailVerified = getStringValue(userData.email);
+
+    console.log("Parsed verified:", verified);
+    console.log("Stored email:", emailVerified);
+
+    if (verified === false) {
       return NextResponse.json(
         { success: false, message: "Akun belum diverifikasi" },
         { status: 400 }
@@ -144,7 +165,7 @@ export async function POST(request: NextRequest) {
       userId,
       email,
       otp,
-      role: userData.role?.stringValue || "cashier",
+      role: getStringValue(userData.role) || "cashier",
       message: "OTP berhasil dibuat",
     });
   } catch (error) {

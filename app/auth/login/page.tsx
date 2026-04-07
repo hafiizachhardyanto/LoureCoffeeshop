@@ -71,7 +71,9 @@ export default function LoginPage() {
       return;
     }
 
-    if (!email || email.trim() === "") {
+    const trimmedEmail = email.trim();
+
+    if (!trimmedEmail || trimmedEmail === "") {
       setError("Email tidak boleh kosong");
       return;
     }
@@ -79,28 +81,35 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      console.log("Sending login request for:", email.trim());
+      console.log("Sending login request for:", trimmedEmail);
 
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim() }),
+        body: JSON.stringify({ email: trimmedEmail }),
       });
 
       console.log("Response status:", response.status);
 
       let result;
+      const responseText = await response.text();
+      
       try {
-        result = await response.json();
+        result = JSON.parse(responseText);
       } catch (parseError) {
-        const text = await response.text();
-        console.error("Failed to parse response:", text);
-        setError("Server error: Invalid response");
+        console.error("Failed to parse response:", responseText);
+        setError("Server error: Invalid response - " + responseText);
         setLoading(false);
         return;
       }
 
       console.log("Response result:", result);
+
+      if (!response.ok) {
+        setError(result.message || `Error ${response.status}: ${responseText}`);
+        setLoading(false);
+        return;
+      }
 
       if (result.success) {
         setUserId(result.userId);
