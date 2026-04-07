@@ -3,14 +3,18 @@ export interface User {
   name: string;
   phone: string;
   email: string;
-  role: "user" | "admin";
+  role: "user" | "admin" | "cashier";
   createdAt: string;
   lastLoginAt: string;
   createdBy?: string;
   deletedAt?: string;
   deletedBy?: string;
   isVerified?: boolean;
+  verified?: boolean;
   sessionToken?: string;
+  otp?: string | null;
+  otpExpiry?: string | null;
+  updatedAt?: string;
 }
 
 export interface MenuItem {
@@ -66,7 +70,7 @@ export interface AdminLog {
 }
 
 export interface CartItem extends OrderItem {
-  menuItem: MenuItem;
+  menuItem?: MenuItem;
 }
 
 export type ViewMode = "grid" | "list";

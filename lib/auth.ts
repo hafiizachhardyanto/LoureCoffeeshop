@@ -1,4 +1,4 @@
-import { db, collection, query, where, getDocs, doc, getDoc } from "@/lib/firebase";
+import { db, collection, query, where, getDocs, doc, getDoc, updateDoc } from "@/lib/firebase";
 import type { User } from "@/types";
 
 export async function validateSession(sessionToken: string): Promise<User | null> {
@@ -12,14 +12,15 @@ export async function validateSession(sessionToken: string): Promise<User | null
     }
 
     const userDoc = querySnapshot.docs[0];
-    return { id: userDoc.id, ...userDoc.data() } as User;
+    const userData = userDoc.data() as Omit<User, "id">;
+    return { id: userDoc.id, ...userData };
   } catch (error) {
     console.error("Session validation error:", error);
     return null;
   }
 }
 
-export function setAuthCookies(user: User): void {
+export function setAuthCookies(user: User & { sessionToken: string }): void {
   if (typeof window === "undefined") return;
   
   const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toUTCString();

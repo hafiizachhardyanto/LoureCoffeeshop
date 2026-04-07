@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/firebase";
-import { doc, getDoc, updateDoc, deleteDoc } from "firebase/firestore";
+import { db, doc, getDoc, updateDoc, deleteDoc } from "@/lib/firebase";
 import crypto from "crypto";
 
 export async function POST(request: NextRequest) {
@@ -37,7 +36,7 @@ export async function POST(request: NextRequest) {
 
     if (otpData.otp !== otp) {
       await updateDoc(otpDocRef, {
-        attempts: otpData.attempts + 1,
+        attempts: (otpData.attempts || 0) + 1,
       });
       return NextResponse.json(
         { success: false, message: "OTP salah" },
@@ -45,7 +44,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let expiryDate;
+    let expiryDate: Date;
     if (otpData.otpExpiry && typeof otpData.otpExpiry.toDate === "function") {
       expiryDate = otpData.otpExpiry.toDate();
     } else if (otpData.otpExpiry && otpData.otpExpiry.seconds) {
@@ -73,16 +72,18 @@ export async function POST(request: NextRequest) {
     }
 
     const userData = userDoc.data();
+    const now = new Date().toISOString();
+    const sessionToken = crypto.randomBytes(32).toString("hex");
 
     await updateDoc(userDocRef, {
       otp: null,
       otpExpiry: null,
-      lastLoginAt: new Date(),
+      sessionToken: sessionToken,
+      lastLoginAt: now,
+      updatedAt: now,
     });
 
     await deleteDoc(otpDocRef);
-
-    const sessionToken = crypto.randomBytes(32).toString("hex");
 
     return NextResponse.json({
       success: true,
@@ -97,7 +98,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Verify login error:", error);
     return NextResponse.json(
-      { success: false, message: "Terjadi kesalahan server" },
+      { success: false, message: "Terjadi kesalahan server: " + (error instanceof Error ? error.message : String(error)) },
       { status: 500 }
     );
   }

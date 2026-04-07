@@ -34,8 +34,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const userDoc = await getDoc(doc(db, "users", uid));
       if (userDoc.exists()) {
-        const userData = userDoc.data() as User;
-        setUser(userData);
+        const userData = userDoc.data() as Omit<User, "id">;
+        setUser({ id: userDoc.id, ...userData });
         
         await updateDoc(doc(db, "users", uid), {
           lastLoginAt: new Date().toISOString(),
@@ -47,6 +47,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    if (!auth) {
+      setLoading(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       setFirebaseUser(fbUser);
       
@@ -69,7 +74,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
-      await signOut(auth);
+      if (auth) {
+        await signOut(auth);
+      }
       clearAuthCookies();
       localStorage.removeItem("sessionToken");
       setUser(null);

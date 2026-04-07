@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/firebase";
-import { collection, doc, setDoc, query, where, getDocs, deleteDoc } from "firebase/firestore";
+import { db, collection, doc, setDoc, query, where, getDocs, deleteDoc } from "@/lib/firebase";
 import crypto from "crypto";
 
 const EMAILJS_SERVICE_ID = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID;
@@ -33,9 +32,11 @@ export async function POST(request: NextRequest) {
 
     const userId = crypto.randomUUID();
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+    const now = new Date().toISOString();
 
     await setDoc(doc(db, "users", userId), {
+      id: userId,
       name,
       phone,
       email,
@@ -43,7 +44,8 @@ export async function POST(request: NextRequest) {
       otp,
       otpExpiry,
       verified: false,
-      createdAt: new Date(),
+      createdAt: now,
+      lastLoginAt: "-",
     });
 
     await setDoc(doc(db, "otp", email), {
@@ -51,6 +53,7 @@ export async function POST(request: NextRequest) {
       otp,
       otpExpiry,
       attempts: 0,
+      createdAt: now,
     });
 
     const emailData = {
@@ -95,7 +98,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Register error:", error);
     return NextResponse.json(
-      { success: false, message: "Terjadi kesalahan server" },
+      { success: false, message: "Terjadi kesalahan server: " + (error instanceof Error ? error.message : String(error)) },
       { status: 500 }
     );
   }

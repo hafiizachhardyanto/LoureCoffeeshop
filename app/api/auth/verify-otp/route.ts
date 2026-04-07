@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/firebase";
-import { doc, getDoc, updateDoc, deleteDoc } from "firebase/firestore";
+import { db, doc, getDoc, updateDoc, deleteDoc } from "@/lib/firebase";
 
 export async function POST(request: NextRequest) {
   try {
@@ -36,7 +35,7 @@ export async function POST(request: NextRequest) {
 
     if (otpData.otp !== otp) {
       await updateDoc(otpDocRef, {
-        attempts: otpData.attempts + 1,
+        attempts: (otpData.attempts || 0) + 1,
       });
       return NextResponse.json(
         { success: false, message: "OTP salah" },
@@ -44,7 +43,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let expiryDate;
+    let expiryDate: Date;
     if (otpData.otpExpiry && typeof otpData.otpExpiry.toDate === "function") {
       expiryDate = otpData.otpExpiry.toDate();
     } else if (otpData.otpExpiry && otpData.otpExpiry.seconds) {
@@ -61,10 +60,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const now = new Date().toISOString();
+
     await updateDoc(doc(db, "users", userId), {
       verified: true,
       otp: null,
       otpExpiry: null,
+      updatedAt: now,
     });
 
     await deleteDoc(otpDocRef);
@@ -76,7 +78,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Verify OTP error:", error);
     return NextResponse.json(
-      { success: false, message: "Terjadi kesalahan server" },
+      { success: false, message: "Terjadi kesalahan server: " + (error instanceof Error ? error.message : String(error)) },
       { status: 500 }
     );
   }

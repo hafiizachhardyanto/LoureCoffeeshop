@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs, doc, updateDoc, setDoc } from "firebase/firestore";
+import { db, collection, query, where, getDocs, doc, setDoc, updateDoc } from "@/lib/firebase";
 import crypto from "crypto";
 
 const EMAILJS_SERVICE_ID = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID;
@@ -35,7 +34,7 @@ export async function POST(request: NextRequest) {
     const userData = userDoc.data();
     const userId = userDoc.id;
 
-    if (!userData.verified) {
+    if (userData.verified === false) {
       return NextResponse.json(
         { success: false, message: "Akun belum diverifikasi" },
         { status: 400 }
@@ -43,18 +42,20 @@ export async function POST(request: NextRequest) {
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
     await setDoc(doc(db, "otp", email), {
       userId,
       otp,
       otpExpiry,
       attempts: 0,
+      createdAt: new Date().toISOString(),
     });
 
     await updateDoc(doc(db, "users", userId), {
       otp,
       otpExpiry,
+      updatedAt: new Date().toISOString(),
     });
 
     const emailData = {
@@ -96,7 +97,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Login error:", error);
     return NextResponse.json(
-      { success: false, message: "Terjadi kesalahan server" },
+      { success: false, message: "Terjadi kesalahan server: " + (error instanceof Error ? error.message : String(error)) },
       { status: 500 }
     );
   }
