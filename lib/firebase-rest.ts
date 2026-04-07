@@ -9,7 +9,7 @@ interface FirestoreDocument {
 }
 
 function convertToFirestoreValue(value: any): any {
-  if (value === null) {
+  if (value === null || value === undefined) {
     return { nullValue: null };
   }
   if (typeof value === 'string') {
@@ -58,13 +58,13 @@ function convertFromFirestoreValue(field: any): any {
     });
     return result;
   }
-  if (field.timestampValue) return new Date(field.timestampValue);
+  if (field.timestampValue) return field.timestampValue;
   return null;
 }
 
 function documentToJson(doc: FirestoreDocument): Record<string, any> {
   const result: Record<string, any> = {
-    id: doc.name.split('/').pop(),
+    id: doc.name.split('/').pop() || '',
   };
   if (doc.fields) {
     Object.keys(doc.fields).forEach(key => {
