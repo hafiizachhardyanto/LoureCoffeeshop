@@ -7,6 +7,10 @@ import { useNetwork } from "@/context/NetworkContext";
 import { useAuth } from "@/context/AuthContext";
 import { setAuthCookies } from "@/lib/auth";
 
+const EMAILJS_SERVICE_ID = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID;
+const EMAILJS_TEMPLATE_ID = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID;
+const EMAILJS_PUBLIC_KEY = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY;
+
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -28,6 +32,35 @@ export default function LoginPage() {
     }
   }, [searchParams]);
 
+  const sendEmailOTP = async (emailToSend: string, otpCode: string) => {
+    const emailData = {
+      service_id: EMAILJS_SERVICE_ID,
+      template_id: EMAILJS_TEMPLATE_ID,
+      user_id: EMAILJS_PUBLIC_KEY,
+      template_params: {
+        email: emailToSend,
+        passcode: otpCode,
+        time: "10 menit",
+        company_name: "Loure Coffee Shop",
+      },
+    };
+
+    const response = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(emailData),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`EmailJS error: ${errorText}`);
+    }
+
+    return true;
+  };
+
   const handleSubmitEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -38,26 +71,55 @@ export default function LoginPage() {
       return;
     }
 
+    if (!email || email.trim() === "") {
+      setError("Email tidak boleh kosong");
+      return;
+    }
+
     setLoading(true);
 
     try {
+      console.log("Sending login request for:", email.trim());
+
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: email.trim() }),
       });
 
-      const result = await response.json();
+      console.log("Response status:", response.status);
+
+      let result;
+      try {
+        result = await response.json();
+      } catch (parseError) {
+        const text = await response.text();
+        console.error("Failed to parse response:", text);
+        setError("Server error: Invalid response");
+        setLoading(false);
+        return;
+      }
+
+      console.log("Response result:", result);
 
       if (result.success) {
         setUserId(result.userId);
         setUserRole(result.role);
-        setStep("otp");
+        
+        try {
+          await sendEmailOTP(result.email, result.otp);
+          setStep("otp");
+        } catch (emailError) {
+          console.error("Email error:", emailError);
+          setError("Gagal mengirim email. OTP Anda: " + result.otp);
+          setStep("otp");
+        }
       } else {
         setError(result.message || "Email tidak terdaftar");
       }
     } catch (error) {
-      setError("Terjadi kesalahan. Silakan coba lagi.");
+      console.error("Fetch error:", error);
+      setError("Terjadi kesalahan koneksi. Silakan coba lagi.");
     } finally {
       setLoading(false);
     }
@@ -72,6 +134,11 @@ export default function LoginPage() {
       return;
     }
 
+    if (!otp || otp.length !== 6) {
+      setError("OTP harus 6 digit");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -80,12 +147,19 @@ export default function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId,
-          email,
+          email: email.trim(),
           otp,
         }),
       });
 
-      const result = await response.json();
+      let result;
+      try {
+        result = await response.json();
+      } catch (parseError) {
+        setError("Server error: Invalid response");
+        setLoading(false);
+        return;
+      }
 
       if (result.success) {
         localStorage.setItem("sessionToken", result.sessionToken);
@@ -128,7 +202,7 @@ export default function LoginPage() {
           </p>
 
           {error && (
-            <div className="alert alert-error">
+            <div className="alert alert-error mb-4">
               <span>{error}</span>
             </div>
           )}
@@ -140,7 +214,7 @@ export default function LoginPage() {
                 type="text"
                 inputMode="numeric"
                 maxLength={6}
-                className="input text-center text-2xl tracking-widest"
+                className="input text-center text-2xl tracking-widest w-full"
                 value={otp}
                 onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
                 placeholder="000000"
@@ -153,7 +227,7 @@ export default function LoginPage() {
               className="btn btn-primary btn-block"
               disabled={loading || otp.length !== 6}
             >
-              {loading ? <span className="loading-spinner"></span> : "Verifikasi & Masuk"}
+              {loading ? <span className="loading loading-spinner"></span> : "Verifikasi & Masuk"}
             </button>
           </form>
 
@@ -181,13 +255,13 @@ export default function LoginPage() {
         </p>
 
         {successMessage && (
-          <div className="alert alert-success">
+          <div className="alert alert-success mb-4">
             <span>{successMessage}</span>
           </div>
         )}
 
         {error && (
-          <div className="alert alert-error">
+          <div className="alert alert-error mb-4">
             <span>{error}</span>
           </div>
         )}
@@ -197,7 +271,7 @@ export default function LoginPage() {
             <label className="block text-sm font-medium mb-1">Email</label>
             <input
               type="email"
-              className="input"
+              className="input w-full"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="email@example.com"
@@ -211,11 +285,11 @@ export default function LoginPage() {
             className="btn btn-primary btn-block"
             disabled={loading}
           >
-            {loading ? <span className="loading-spinner"></span> : "Kirim OTP"}
+            {loading ? <span className="loading loading-spinner"></span> : "Kirim OTP"}
           </button>
         </form>
 
-        <div className="divider">atau</div>
+        <div className="divider my-6">atau</div>
 
         <p className="text-center text-gray-600">
           Belum punya akun?{" "}

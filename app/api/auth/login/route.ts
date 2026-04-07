@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 
-const EMAILJS_SERVICE_ID = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID;
-const EMAILJS_TEMPLATE_ID = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID;
-const EMAILJS_PUBLIC_KEY = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY;
-const EMAILJS_PRIVATE_KEY = process.env.EMAILJS_PRIVATE_KEY;
-
 const PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 
 async function firestoreQuery(collection: string, field: string, op: string, value: string) {
@@ -81,17 +76,30 @@ async function firestoreUpdate(collection: string, docId: string, data: any) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch (parseError) {
+      return NextResponse.json(
+        { success: false, message: "Invalid JSON body" },
+        { status: 400 }
+      );
+    }
+
     const { email } = body;
 
-    if (!email) {
+    console.log("Login attempt for email:", email);
+
+    if (!email || typeof email !== 'string') {
       return NextResponse.json(
-        { success: false, message: "Email harus diisi" },
+        { success: false, message: "Email harus diisi dan berupa string" },
         { status: 400 }
       );
     }
 
     const queryResult = await firestoreQuery("users", "email", "==", email);
+
+    console.log("Query result:", JSON.stringify(queryResult, null, 2));
 
     if (!queryResult || queryResult.length === 0 || !queryResult[0].document) {
       return NextResponse.json(
@@ -103,6 +111,9 @@ export async function POST(request: NextRequest) {
     const userDoc = queryResult[0].document;
     const userData = userDoc.fields;
     const userId = userDoc.name.split('/').pop();
+
+    console.log("User found:", userId);
+    console.log("User verified status:", userData.verified);
 
     if (userData.verified?.booleanValue === false) {
       return NextResponse.json(
@@ -128,49 +139,13 @@ export async function POST(request: NextRequest) {
       updatedAt: new Date().toISOString(),
     });
 
-    const emailData = {
-      service_id: EMAILJS_SERVICE_ID,
-      template_id: EMAILJS_TEMPLATE_ID,
-      user_id: EMAILJS_PUBLIC_KEY,
-      accessToken: EMAILJS_PRIVATE_KEY,
-      template_params: {
-        email: email,
-        passcode: otp,
-        time: "10 menit",
-        company_name: "Loure Coffee Shop",
-      },
-    };
-
-    console.log("Sending email with data:", JSON.stringify(emailData, null, 2));
-
-    const emailResponse = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(emailData),
-    });
-
-    console.log("EmailJS response status:", emailResponse.status);
-
-    if (!emailResponse.ok) {
-      const errorText = await emailResponse.text();
-      console.error("EmailJS error response:", errorText);
-      
-      return NextResponse.json(
-        { success: false, message: `Gagal mengirim email OTP: ${errorText}` },
-        { status: 500 }
-      );
-    }
-
-    const responseText = await emailResponse.text();
-    console.log("EmailJS success response:", responseText);
-
     return NextResponse.json({
       success: true,
       userId,
+      email,
+      otp,
       role: userData.role?.stringValue || "cashier",
-      message: "OTP telah dikirim ke email Anda",
+      message: "OTP berhasil dibuat",
     });
   } catch (error) {
     console.error("Login error:", error);

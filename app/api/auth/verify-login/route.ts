@@ -48,8 +48,19 @@ async function firestoreDelete(collection: string, docId: string) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch (parseError) {
+      return NextResponse.json(
+        { success: false, message: "Invalid JSON body" },
+        { status: 400 }
+      );
+    }
+
     const { userId, email, otp } = body;
+
+    console.log("Verify login attempt:", { userId, email, otp });
 
     if (!userId || !email || !otp) {
       return NextResponse.json(
