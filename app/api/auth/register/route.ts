@@ -78,7 +78,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if email exists
     const queryResult = await firestoreQuery("users", "email", "==", email);
 
     if (queryResult && queryResult.length > 0 && queryResult[0].document) {
@@ -93,7 +92,6 @@ export async function POST(request: NextRequest) {
     const otpExpiry = new Date(Date.now() + 10 * 60 * 1000).toISOString();
     const now = new Date().toISOString();
 
-    // Create user
     await firestoreSet("users", userId, {
       id: userId,
       name,
@@ -107,7 +105,6 @@ export async function POST(request: NextRequest) {
       lastLoginAt: "-",
     });
 
-    // Create OTP record
     await firestoreSet("otp", email, {
       userId,
       otp,
@@ -141,7 +138,6 @@ export async function POST(request: NextRequest) {
       const errorText = await emailResponse.text();
       console.error("EmailJS error:", errorText);
       
-      // Rollback
       await firestoreDelete("users", userId);
       await firestoreDelete("otp", email);
       

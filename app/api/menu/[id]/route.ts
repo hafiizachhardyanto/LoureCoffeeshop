@@ -45,9 +45,13 @@ async function firestoreDelete(collection: string, docId: string) {
   return response.ok;
 }
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const doc = await firestoreGet("menu", params.id);
+    const { id } = await params;
+    const doc = await firestoreGet("menu", id);
     
     if (!doc) {
       return NextResponse.json(
@@ -84,8 +88,12 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const { name, description, price, category, stock, rating, isAvailable } = body;
 
@@ -101,7 +109,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     if (rating !== undefined) updateData.rating = rating;
     if (isAvailable !== undefined) updateData.isAvailable = isAvailable;
 
-    await firestoreUpdate("menu", params.id, updateData);
+    await firestoreUpdate("menu", id, updateData);
 
     return NextResponse.json({
       success: true,
@@ -116,9 +124,13 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    await firestoreDelete("menu", params.id);
+    const { id } = await params;
+    await firestoreDelete("menu", id);
 
     return NextResponse.json({
       success: true,

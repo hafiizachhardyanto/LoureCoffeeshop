@@ -6,7 +6,6 @@ const EMAILJS_TEMPLATE_ID = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID;
 const EMAILJS_PUBLIC_KEY = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY;
 const EMAILJS_PRIVATE_KEY = process.env.EMAILJS_PRIVATE_KEY;
 
-// Firestore REST API helper
 const PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 
 async function firestoreQuery(collection: string, field: string, op: string, value: string) {
@@ -92,7 +91,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Query users by email using REST API
     const queryResult = await firestoreQuery("users", "email", "==", email);
 
     if (!queryResult || queryResult.length === 0 || !queryResult[0].document) {
@@ -116,7 +114,6 @@ export async function POST(request: NextRequest) {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpExpiry = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
-    // Save OTP using REST API
     await firestoreSet("otp", email, {
       userId,
       otp,
@@ -125,7 +122,6 @@ export async function POST(request: NextRequest) {
       createdAt: new Date().toISOString(),
     });
 
-    // Update user with OTP
     await firestoreUpdate("users", userId, {
       otp,
       otpExpiry,

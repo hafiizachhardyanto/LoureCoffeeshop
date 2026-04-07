@@ -46,14 +46,6 @@ async function firestoreDelete(collection: string, docId: string) {
   return response.ok;
 }
 
-function parseFirestoreValue(value: any): any {
-  if (value.stringValue !== undefined) return value.stringValue;
-  if (value.integerValue !== undefined) return parseInt(value.integerValue);
-  if (value.booleanValue !== undefined) return value.booleanValue;
-  if (value.timestampValue !== undefined) return new Date(value.timestampValue);
-  return value;
-}
-
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
