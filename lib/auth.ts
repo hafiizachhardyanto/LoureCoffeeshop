@@ -26,7 +26,7 @@ export async function validateSession(sessionToken: string): Promise<User | null
 
     const result = await response.json();
 
-    if (!result || result.length === 0 || !result[0].document) {
+    if (!result || !Array.isArray(result) || result.length === 0 || !result[0].document) {
       return null;
     }
 
@@ -34,11 +34,11 @@ export async function validateSession(sessionToken: string): Promise<User | null
     const userData = userDoc.fields;
     
     return {
-      id: userDoc.name.split('/').pop(),
-      name: userData.name?.stringValue,
-      phone: userData.phone?.stringValue,
-      email: userData.email?.stringValue,
-      role: userData.role?.stringValue,
+      id: userDoc.name.split('/').pop() || '',
+      name: userData.name?.stringValue || '',
+      phone: userData.phone?.stringValue || '',
+      email: userData.email?.stringValue || '',
+      role: (userData.role?.stringValue as "user" | "admin" | "cashier") || "user",
       sessionToken: userData.sessionToken?.stringValue,
     } as User;
   } catch (error) {

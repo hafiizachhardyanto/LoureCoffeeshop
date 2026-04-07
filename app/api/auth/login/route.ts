@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import crypto from "crypto";
 
 const PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 
@@ -25,6 +24,11 @@ async function firestoreQuery(collection: string, field: string, op: string, val
     body: JSON.stringify(body),
   });
 
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Firestore query failed: ${response.status} - ${errorText}`);
+  }
+
   return response.json();
 }
 
@@ -36,7 +40,7 @@ async function firestoreSet(collection: string, docId: string, data: any) {
     if (typeof data[key] === 'string') {
       fields[key] = { stringValue: data[key] };
     } else if (typeof data[key] === 'number') {
-      fields[key] = { integerValue: data[key] };
+      fields[key] = { integerValue: String(data[key]) };
     } else if (typeof data[key] === 'boolean') {
       fields[key] = { booleanValue: data[key] };
     }
@@ -47,6 +51,11 @@ async function firestoreSet(collection: string, docId: string, data: any) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ fields }),
   });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Firestore set failed: ${response.status} - ${errorText}`);
+  }
 
   return response.json();
 }
@@ -56,10 +65,12 @@ async function firestoreUpdate(collection: string, docId: string, data: any) {
   
   const fields: any = {};
   Object.keys(data).forEach(key => {
-    if (typeof data[key] === 'string') {
+    if (data[key] === null) {
+      fields[key] = { nullValue: null };
+    } else if (typeof data[key] === 'string') {
       fields[key] = { stringValue: data[key] };
     } else if (typeof data[key] === 'number') {
-      fields[key] = { integerValue: data[key] };
+      fields[key] = { integerValue: String(data[key]) };
     } else if (typeof data[key] === 'boolean') {
       fields[key] = { booleanValue: data[key] };
     }
@@ -70,6 +81,11 @@ async function firestoreUpdate(collection: string, docId: string, data: any) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ fields }),
   });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Firestore update failed: ${response.status} - ${errorText}`);
+  }
 
   return response.json();
 }
@@ -111,30 +127,43 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const queryResult = await firestoreQuery("users", "email", "==", email);
+    const trimmedEmail = email.trim().toLowerCase();
+    
+    if (!PROJECT_ID) {
+      console.error("FIREBASE_PROJECT_ID not set");
+      return NextResponse.json(
+        { success: false, message: "Server configuration error" },
+        { status: 500 }
+      );
+    }
 
-    console.log("Query result length:", queryResult?.length);
+    const queryResult = await firestoreQuery("users", "email", "==", trimmedEmail);
 
-    if (!queryResult || queryResult.length === 0 || !queryResult[0].document) {
+    console.log("Query result count:", queryResult?.length || 0);
+
+    if (!queryResult || !Array.isArray(queryResult) || queryResult.length === 0) {
       return NextResponse.json(
         { success: false, message: "Email tidak terdaftar" },
         { status: 400 }
       );
     }
 
-    const userDoc = queryResult[0].document;
+    const firstResult = queryResult[0];
+    if (!firstResult.document) {
+      return NextResponse.json(
+        { success: false, message: "Email tidak terdaftar" },
+        { status: 400 }
+      );
+    }
+
+    const userDoc = firstResult.document;
     const userData = userDoc.fields;
     const userId = userDoc.name.split('/').pop();
 
     console.log("User found:", userId);
-    console.log("User data fields:", Object.keys(userData));
-    console.log("Verified field:", JSON.stringify(userData.verified));
 
-    const verified = getBooleanValue(userData.verified);
-    const emailVerified = getStringValue(userData.email);
-
-    console.log("Parsed verified:", verified);
-    console.log("Stored email:", emailVerified);
+    const verified = getBooleanValue(userData.verified) ?? getBooleanValue(userData.isVerified);
+    console.log("User verified status:", verified);
 
     if (verified === false) {
       return NextResponse.json(
@@ -145,27 +174,35 @@ export async function POST(request: NextRequest) {
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpExpiry = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+    const now = new Date().toISOString();
 
-    await firestoreSet("otp", email, {
-      userId,
-      otp,
-      otpExpiry,
+    await firestoreSet("otp", trimmedEmail, {
+      userId: userId as string,
+      otp: otp,
+      otpExpiry: otpExpiry,
       attempts: 0,
-      createdAt: new Date().toISOString(),
+      createdAt: now,
     });
 
-    await firestoreUpdate("users", userId, {
-      otp,
-      otpExpiry,
-      updatedAt: new Date().toISOString(),
+    await firestoreUpdate("users", userId as string, {
+      otp: otp,
+      otpExpiry: otpExpiry,
+      updatedAt: now,
     });
+
+    const userEmail = getStringValue(userData.email) || trimmedEmail;
+    const userRole = getStringValue(userData.role) || "user";
+    const userName = getStringValue(userData.name) || "";
+
+    console.log("Login success for:", userEmail, "Role:", userRole);
 
     return NextResponse.json({
       success: true,
-      userId,
-      email,
-      otp,
-      role: getStringValue(userData.role) || "cashier",
+      userId: userId,
+      email: userEmail,
+      otp: otp,
+      role: userRole,
+      name: userName,
       message: "OTP berhasil dibuat",
     });
   } catch (error) {

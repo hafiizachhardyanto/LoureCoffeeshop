@@ -25,6 +25,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [debugInfo, setDebugInfo] = useState("");
 
   useEffect(() => {
     if (searchParams.get("registered") === "true") {
@@ -32,18 +33,27 @@ export default function LoginPage() {
     }
   }, [searchParams]);
 
+  const getBaseUrl = () => {
+    if (typeof window !== "undefined") {
+      return window.location.origin;
+    }
+    return "";
+  };
+
   const sendEmailOTP = async (emailToSend: string, otpCode: string) => {
     const emailData = {
       service_id: EMAILJS_SERVICE_ID,
       template_id: EMAILJS_TEMPLATE_ID,
       user_id: EMAILJS_PUBLIC_KEY,
       template_params: {
-        email: emailToSend,
+        to_email: emailToSend,
         passcode: otpCode,
         time: "10 menit",
         company_name: "Loure Coffee Shop",
       },
     };
+
+    console.log("Sending email with EmailJS to:", emailToSend);
 
     const response = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
       method: "POST",
@@ -55,6 +65,7 @@ export default function LoginPage() {
 
     if (!response.ok) {
       const errorText = await response.text();
+      console.error("EmailJS error:", errorText);
       throw new Error(`EmailJS error: ${errorText}`);
     }
 
@@ -65,15 +76,16 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     setSuccessMessage("");
+    setDebugInfo("");
 
     if (!checkNetwork()) {
       showNetworkError();
       return;
     }
 
-    const trimmedEmail = email.trim();
+    const trimmedEmail = email.trim().toLowerCase();
 
-    if (!trimmedEmail || trimmedEmail === "") {
+    if (!trimmedEmail) {
       setError("Email tidak boleh kosong");
       return;
     }
@@ -81,32 +93,34 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      console.log("Sending login request for:", trimmedEmail);
+      const baseUrl = getBaseUrl();
+      const apiUrl = `${baseUrl}/api/auth/login`;
+      
+      console.log("API URL:", apiUrl);
+      setDebugInfo(`Requesting: ${apiUrl}`);
 
-      const response = await fetch("/api/auth/login", {
+      const response = await fetch(apiUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: trimmedEmail }),
       });
 
-      console.log("Response status:", response.status);
-
-      let result;
       const responseText = await response.text();
+      let result;
       
       try {
         result = JSON.parse(responseText);
       } catch (parseError) {
-        console.error("Failed to parse response:", responseText);
-        setError("Server error: Invalid response - " + responseText);
+        console.error("Parse error:", responseText);
+        setError("Server error: Invalid response format");
+        setDebugInfo(`Raw response: ${responseText.substring(0, 200)}`);
         setLoading(false);
         return;
       }
 
-      console.log("Response result:", result);
-
       if (!response.ok) {
-        setError(result.message || `Error ${response.status}: ${responseText}`);
+        setError(result.message || `Error ${response.status}`);
+        setDebugInfo(`Status: ${response.status}, Message: ${result.message}`);
         setLoading(false);
         return;
       }
@@ -119,16 +133,16 @@ export default function LoginPage() {
           await sendEmailOTP(result.email, result.otp);
           setStep("otp");
         } catch (emailError) {
-          console.error("Email error:", emailError);
-          setError("Gagal mengirim email. OTP Anda: " + result.otp);
+          console.error("Email failed:", emailError);
+          setError(`Gagal mengirim email. OTP Anda: ${result.otp}`);
           setStep("otp");
         }
       } else {
-        setError(result.message || "Email tidak terdaftar");
+        setError(result.message || "Login gagal");
       }
     } catch (error) {
-      console.error("Fetch error:", error);
-      setError("Terjadi kesalahan koneksi. Silakan coba lagi.");
+      console.error("Network error:", error);
+      setError("Terjadi kesalahan koneksi. Periksa jaringan Anda.");
     } finally {
       setLoading(false);
     }
@@ -151,20 +165,21 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await fetch("/api/auth/verify-login", {
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}/api/auth/verify-login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId,
-          email: email.trim(),
-          otp,
+          userId: userId,
+          email: email.trim().toLowerCase(),
+          otp: otp,
         }),
       });
 
       let result;
       try {
         result = await response.json();
-      } catch (parseError) {
+      } catch {
         setError("Server error: Invalid response");
         setLoading(false);
         return;
@@ -192,7 +207,7 @@ export default function LoginPage() {
       } else {
         setError(result.message || "OTP salah");
       }
-    } catch (error) {
+    } catch {
       setError("Terjadi kesalahan. Silakan coba lagi.");
     } finally {
       setLoading(false);
@@ -201,52 +216,56 @@ export default function LoginPage() {
 
   if (step === "otp") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-        <div className="card w-full max-w-md p-8 shadow-2xl">
-          <h2 className="text-2xl font-bold text-center text-blue-900 mb-2">
-            Verifikasi OTP
-          </h2>
-          <p className="text-center text-gray-600 mb-6">
-            Masukkan kode OTP yang dikirim ke {email}
-          </p>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 to-blue-700 p-4">
+        <div className="card bg-white shadow-2xl w-full max-w-md">
+          <div className="card-body p-8">
+            <h2 className="text-2xl font-bold text-center text-blue-900 mb-2">
+              Verifikasi OTP
+            </h2>
+            <p className="text-center text-gray-600 mb-6">
+              Masukkan kode OTP yang dikirim ke {email}
+            </p>
 
-          {error && (
-            <div className="alert alert-error mb-4">
-              <span>{error}</span>
+            {error && (
+              <div className="alert alert-error mb-4">
+                <span>{error}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleVerifyOTP} className="space-y-4">
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text font-medium">Kode OTP</span>
+                </label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  className="input input-bordered text-center text-2xl tracking-widest"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                  placeholder="000000"
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="btn btn-primary btn-block"
+                disabled={loading || otp.length !== 6}
+              >
+                {loading ? <span className="loading loading-spinner"></span> : "Verifikasi & Masuk"}
+              </button>
+            </form>
+
+            <div className="mt-4 text-center">
+              <button
+                onClick={() => setStep("email")}
+                className="text-blue-600 hover:underline text-sm"
+              >
+                Kembali
+              </button>
             </div>
-          )}
-
-          <form onSubmit={handleVerifyOTP} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Kode OTP</label>
-              <input
-                type="text"
-                inputMode="numeric"
-                maxLength={6}
-                className="input text-center text-2xl tracking-widest w-full"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-                placeholder="000000"
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="btn btn-primary btn-block"
-              disabled={loading || otp.length !== 6}
-            >
-              {loading ? <span className="loading loading-spinner"></span> : "Verifikasi & Masuk"}
-            </button>
-          </form>
-
-          <div className="text-center mt-4">
-            <button
-              onClick={() => setStep("email")}
-              className="text-sm text-gray-600 hover:underline"
-            >
-              Kembali
-            </button>
           </div>
         </div>
       </div>
@@ -254,58 +273,79 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="card w-full max-w-md p-8 shadow-2xl">
-        <h2 className="text-2xl font-bold text-center text-blue-900 mb-2">
-          Selamat Datang Kembali
-        </h2>
-        <p className="text-center text-gray-600 mb-6">
-          Masuk ke akun Loure Coffee Shop Anda
-        </p>
-
-        {successMessage && (
-          <div className="alert alert-success mb-4">
-            <span>{successMessage}</span>
-          </div>
-        )}
-
-        {error && (
-          <div className="alert alert-error mb-4">
-            <span>{error}</span>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmitEmail} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Email</label>
-            <input
-              type="email"
-              className="input w-full"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="email@example.com"
-              required
-            />
-            <p className="text-sm text-gray-600 mt-1">OTP akan dikirim ke email ini</p>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 to-blue-700 p-4">
+      <div className="card bg-white shadow-2xl w-full max-w-md">
+        <div className="card-body p-8">
+          <div className="absolute top-4 left-4">
+            <Link href="/" className="flex items-center gap-3 text-white hover:text-blue-200 transition-colors">
+              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
+                <span className="text-blue-900 font-bold text-sm">L</span>
+              </div>
+              <span className="text-xl font-bold">LOURE.</span>
+            </Link>
           </div>
 
-          <button
-            type="submit"
-            className="btn btn-primary btn-block"
-            disabled={loading}
-          >
-            {loading ? <span className="loading loading-spinner"></span> : "Kirim OTP"}
-          </button>
-        </form>
+          <h2 className="text-2xl font-bold text-center text-blue-900 mb-2 mt-8">
+            Selamat Datang Kembali
+          </h2>
+          <p className="text-center text-gray-600 mb-6">
+            Masuk ke akun Loure Coffee Shop Anda
+          </p>
 
-        <div className="divider my-6">atau</div>
+          {successMessage && (
+            <div className="alert alert-success mb-4">
+              <span>{successMessage}</span>
+            </div>
+          )}
 
-        <p className="text-center text-gray-600">
-          Belum punya akun?{" "}
-          <Link href="/auth/register" className="text-blue-900 font-medium hover:underline">
-            Daftar sekarang
-          </Link>
-        </p>
+          {error && (
+            <div className="alert alert-error mb-4">
+              <span>{error}</span>
+            </div>
+          )}
+
+          {debugInfo && (
+            <div className="alert alert-info mb-4 text-xs">
+              <span>{debugInfo}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmitEmail} className="space-y-4">
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text font-medium">Email</span>
+              </label>
+              <input
+                type="email"
+                className="input input-bordered"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="email@example.com"
+                required
+              />
+              <label className="label">
+                <span className="label-text-alt text-gray-500">OTP akan dikirim ke email ini</span>
+              </label>
+            </div>
+
+            <button
+              type="submit"
+              className="btn btn-primary btn-block"
+              disabled={loading}
+            >
+              {loading ? <span className="loading loading-spinner"></span> : "Kirim OTP"}
+            </button>
+          </form>
+
+          <div className="divider my-6">atau</div>
+
+          <p className="text-center text-gray-600">
+            Belum punya akun?{" "}
+            <Link href="/auth/register" className="text-blue-600 font-medium hover:underline">
+              Daftar sekarang
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );
