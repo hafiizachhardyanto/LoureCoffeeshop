@@ -56,8 +56,9 @@ export async function POST(request: NextRequest) {
 
     await updateDocument("users", userId, {
       verified: true,
-      otp: null,
-      otpExpiry: null,
+      isVerified: true,
+      otp: "",
+      otpExpiry: "",
       updatedAt: now,
     });
 

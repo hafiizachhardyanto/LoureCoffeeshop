@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
 
     const { userId, email, otp } = body;
 
-    console.log("Verify OTP attempt for:", email);
+    console.log("Verify OTP for:", email);
 
     if (!userId || !email || !otp) {
       return NextResponse.json(
@@ -77,16 +77,14 @@ export async function POST(request: NextRequest) {
     const sessionToken = crypto.randomBytes(32).toString("hex");
 
     await updateDocument("users", userId, {
-      otp: null,
-      otpExpiry: null,
+      otp: "",
+      otpExpiry: "",
       sessionToken: sessionToken,
       lastLoginAt: now,
       updatedAt: now,
     });
 
     await deleteDocument("otp", trimmedEmail);
-
-    console.log("Login verified for:", userId);
 
     return NextResponse.json({
       success: true,

@@ -140,7 +140,9 @@ export async function setDocument(collection: string, docId: string, data: any):
   
   const fields: Record<string, any> = {};
   Object.keys(data).forEach(key => {
-    fields[key] = convertToFirestoreValue(data[key]);
+    if (data[key] !== undefined) {
+      fields[key] = convertToFirestoreValue(data[key]);
+    }
   });
 
   const response = await fetch(url, {
@@ -159,18 +161,21 @@ export async function setDocument(collection: string, docId: string, data: any):
 
 export async function updateDocument(collection: string, docId: string, data: any): Promise<any> {
   const encodedId = encodeURIComponent(docId);
-  const fieldPaths = Object.keys(data).map(k => `updateMask.fieldPaths=${encodeURIComponent(k)}`).join('&');
-  const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/${collection}/${encodedId}?${fieldPaths}&key=${API_KEY}`;
   
-  const fields: Record<string, any> = {};
+  const fieldsToUpdate: Record<string, any> = {};
   Object.keys(data).forEach(key => {
-    fields[key] = convertToFirestoreValue(data[key]);
+    if (data[key] !== undefined) {
+      fieldsToUpdate[key] = convertToFirestoreValue(data[key]);
+    }
   });
+
+  const fieldPaths = Object.keys(fieldsToUpdate).map(k => `updateMask.fieldPaths=${encodeURIComponent(k)}`).join('&');
+  const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/${collection}/${encodedId}?${fieldPaths}&key=${API_KEY}`;
 
   const response = await fetch(url, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ fields }),
+    body: JSON.stringify({ fields: fieldsToUpdate }),
   });
 
   if (!response.ok) {
