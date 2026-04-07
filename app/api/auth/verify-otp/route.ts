@@ -1,49 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-
-async function firestoreGet(collection: string, docId: string) {
-  const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/${collection}/${docId}`;
-  
-  const response = await fetch(url);
-  if (!response.ok) return null;
-  return response.json();
-}
-
-async function firestoreUpdate(collection: string, docId: string, data: any) {
-  const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/${collection}/${docId}?updateMask.fieldPaths=${Object.keys(data).join('&updateMask.fieldPaths=')}`;
-  
-  const fields: any = {};
-  Object.keys(data).forEach(key => {
-    if (data[key] === null) {
-      fields[key] = { nullValue: null };
-    } else if (typeof data[key] === 'string') {
-      fields[key] = { stringValue: data[key] };
-    } else if (typeof data[key] === 'number') {
-      fields[key] = { integerValue: data[key] };
-    } else if (typeof data[key] === 'boolean') {
-      fields[key] = { booleanValue: data[key] };
-    }
-  });
-
-  const response = await fetch(url, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ fields }),
-  });
-
-  return response.json();
-}
-
-async function firestoreDelete(collection: string, docId: string) {
-  const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/${collection}/${docId}`;
-  
-  const response = await fetch(url, {
-    method: 'DELETE',
-  });
-
-  return response.ok;
-}
+import { getDocument, updateDocument, deleteDocument } from "@/lib/firebase-rest";
 
 export async function POST(request: NextRequest) {
   try {
@@ -57,7 +13,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const otpDoc = await firestoreGet("otp", email);
+    const trimmedEmail = email.trim().toLowerCase();
+    const otpDoc = await getDocument("otp", trimmedEmail);
 
     if (!otpDoc) {
       return NextResponse.json(
@@ -66,21 +23,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const otpData = otpDoc.fields;
-    const attempts = parseInt(otpData.attempts?.integerValue || "0");
+    const attempts = otpDoc.attempts || 0;
 
     if (attempts >= 3) {
-      await firestoreDelete("otp", email);
+      await deleteDocument("otp", trimmedEmail);
       return NextResponse.json(
         { success: false, message: "Terlalu banyak percobaan. Silakan daftar ulang" },
         { status: 400 }
       );
     }
 
-    const storedOtp = otpData.otp?.stringValue;
-
-    if (storedOtp !== otp) {
-      await firestoreUpdate("otp", email, {
+    if (otpDoc.otp !== otp) {
+      await updateDocument("otp", trimmedEmail, {
         attempts: attempts + 1,
       });
       return NextResponse.json(
@@ -89,10 +43,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const expiryDate = new Date(otpData.otpExpiry?.stringValue || otpData.otpExpiry?.timestampValue);
-
+    const expiryDate = new Date(otpDoc.otpExpiry);
     if (new Date() > expiryDate) {
-      await firestoreDelete("otp", email);
+      await deleteDocument("otp", trimmedEmail);
       return NextResponse.json(
         { success: false, message: "OTP sudah kadaluarsa" },
         { status: 400 }
@@ -101,14 +54,14 @@ export async function POST(request: NextRequest) {
 
     const now = new Date().toISOString();
 
-    await firestoreUpdate("users", userId, {
+    await updateDocument("users", userId, {
       verified: true,
       otp: null,
       otpExpiry: null,
       updatedAt: now,
     });
 
-    await firestoreDelete("otp", email);
+    await deleteDocument("otp", trimmedEmail);
 
     return NextResponse.json({
       success: true,
