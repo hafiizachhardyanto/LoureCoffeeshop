@@ -1,7 +1,65 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createTransaction } from "@/lib/midtrans";
-import { db, doc, setDoc, Timestamp, increment, updateDoc } from "@/lib/firebase";
-import { generateOrderId } from "@/lib/utils";
+
+const PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+
+async function firestoreSet(collection: string, docId: string, data: any) {
+  const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/${collection}/${docId}`;
+  
+  const fields: any = {};
+  Object.keys(data).forEach(key => {
+    if (typeof data[key] === 'string') {
+      fields[key] = { stringValue: data[key] };
+    } else if (typeof data[key] === 'number') {
+      fields[key] = { integerValue: data[key] };
+    } else if (typeof data[key] === 'boolean') {
+      fields[key] = { booleanValue: data[key] };
+    } else if (Array.isArray(data[key])) {
+      fields[key] = {
+        arrayValue: {
+          values: data[key].map((item: any) => ({
+            mapValue: {
+              fields: {
+                menuId: { stringValue: item.menuId },
+                name: { stringValue: item.name },
+                price: { integerValue: item.price },
+                quantity: { integerValue: item.quantity },
+                subtotal: { integerValue: item.subtotal },
+              }
+            }
+          }))
+        }
+      };
+    }
+  });
+
+  const response = await fetch(url, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields }),
+  });
+
+  return response.json();
+}
+
+async function firestoreUpdate(collection: string, docId: string, data: any) {
+  const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/${collection}/${docId}?updateMask.fieldPaths=${Object.keys(data).join('&updateMask.fieldPaths=')}`;
+  
+  const fields: any = {};
+  Object.keys(data).forEach(key => {
+    if (typeof data[key] === 'number') {
+      fields[key] = { integerValue: data[key] };
+    }
+  });
+
+  const response = await fetch(url, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields }),
+  });
+
+  return response.json();
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,7 +80,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const orderId = generateOrderId();
+    const orderId = `LOURE-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 5).toUpperCase()}`;
 
     const midtransItems = items.map((item: any) => ({
       id: item.menuId,
@@ -69,11 +127,11 @@ export async function POST(request: NextRequest) {
       updatedAt: new Date().toISOString(),
     };
 
-    await setDoc(doc(db, "orders", orderId), orderData);
+    await firestoreSet("orders", orderId, orderData);
 
     for (const item of items) {
-      await updateDoc(doc(db, "menu", item.menuId), {
-        stock: increment(-item.quantity),
+      await firestoreUpdate("menu", item.menuId, {
+        stock: -item.quantity,
       });
     }
 

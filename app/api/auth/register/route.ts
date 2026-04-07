@@ -1,11 +1,70 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db, collection, doc, setDoc, query, where, getDocs, deleteDoc } from "@/lib/firebase";
 import crypto from "crypto";
 
 const EMAILJS_SERVICE_ID = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID;
 const EMAILJS_TEMPLATE_ID = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID;
 const EMAILJS_PUBLIC_KEY = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY;
 const EMAILJS_PRIVATE_KEY = process.env.EMAILJS_PRIVATE_KEY;
+
+const PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+
+async function firestoreQuery(collection: string, field: string, op: string, value: string) {
+  const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents:runQuery`;
+  
+  const body = {
+    structuredQuery: {
+      from: [{ collectionId: collection }],
+      where: {
+        fieldFilter: {
+          field: { fieldPath: field },
+          op: op === "==" ? "EQUAL" : op,
+          value: { stringValue: value }
+        }
+      }
+    }
+  };
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  return response.json();
+}
+
+async function firestoreSet(collection: string, docId: string, data: any) {
+  const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/${collection}/${docId}`;
+  
+  const fields: any = {};
+  Object.keys(data).forEach(key => {
+    if (typeof data[key] === 'string') {
+      fields[key] = { stringValue: data[key] };
+    } else if (typeof data[key] === 'number') {
+      fields[key] = { integerValue: data[key] };
+    } else if (typeof data[key] === 'boolean') {
+      fields[key] = { booleanValue: data[key] };
+    }
+  });
+
+  const response = await fetch(url, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields }),
+  });
+
+  return response.json();
+}
+
+async function firestoreDelete(collection: string, docId: string) {
+  const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/${collection}/${docId}`;
+  
+  const response = await fetch(url, {
+    method: 'DELETE',
+  });
+
+  return response.ok;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,11 +78,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const usersRef = collection(db, "users");
-    const q = query(usersRef, where("email", "==", email));
-    const querySnapshot = await getDocs(q);
+    // Check if email exists
+    const queryResult = await firestoreQuery("users", "email", "==", email);
 
-    if (!querySnapshot.empty) {
+    if (queryResult && queryResult.length > 0 && queryResult[0].document) {
       return NextResponse.json(
         { success: false, message: "Email sudah terdaftar" },
         { status: 400 }
@@ -35,7 +93,8 @@ export async function POST(request: NextRequest) {
     const otpExpiry = new Date(Date.now() + 10 * 60 * 1000).toISOString();
     const now = new Date().toISOString();
 
-    await setDoc(doc(db, "users", userId), {
+    // Create user
+    await firestoreSet("users", userId, {
       id: userId,
       name,
       phone,
@@ -48,7 +107,8 @@ export async function POST(request: NextRequest) {
       lastLoginAt: "-",
     });
 
-    await setDoc(doc(db, "otp", email), {
+    // Create OTP record
+    await firestoreSet("otp", email, {
       userId,
       otp,
       otpExpiry,
@@ -81,8 +141,9 @@ export async function POST(request: NextRequest) {
       const errorText = await emailResponse.text();
       console.error("EmailJS error:", errorText);
       
-      await deleteDoc(doc(db, "users", userId));
-      await deleteDoc(doc(db, "otp", email));
+      // Rollback
+      await firestoreDelete("users", userId);
+      await firestoreDelete("otp", email);
       
       return NextResponse.json(
         { success: false, message: "Gagal mengirim email OTP" },

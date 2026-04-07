@@ -1,26 +1,53 @@
-import { db, collection, query, where, getDocs, doc, getDoc, updateDoc } from "@/lib/firebase";
 import type { User } from "@/types";
 
 export async function validateSession(sessionToken: string): Promise<User | null> {
   try {
-    const usersRef = collection(db, "users");
-    const q = query(usersRef, where("sessionToken", "==", sessionToken));
-    const querySnapshot = await getDocs(q);
+    const PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+    const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents:runQuery`;
+    
+    const body = {
+      structuredQuery: {
+        from: [{ collectionId: "users" }],
+        where: {
+          fieldFilter: {
+            field: { fieldPath: "sessionToken" },
+            op: "EQUAL",
+            value: { stringValue: sessionToken }
+          }
+        }
+      }
+    };
 
-    if (querySnapshot.empty) {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    const result = await response.json();
+
+    if (!result || result.length === 0 || !result[0].document) {
       return null;
     }
 
-    const userDoc = querySnapshot.docs[0];
-    const userData = userDoc.data() as Omit<User, "id">;
-    return { id: userDoc.id, ...userData };
+    const userDoc = result[0].document;
+    const userData = userDoc.fields;
+    
+    return {
+      id: userDoc.name.split('/').pop(),
+      name: userData.name?.stringValue,
+      phone: userData.phone?.stringValue,
+      email: userData.email?.stringValue,
+      role: userData.role?.stringValue,
+      sessionToken: userData.sessionToken?.stringValue,
+    } as User;
   } catch (error) {
     console.error("Session validation error:", error);
     return null;
   }
 }
 
-export function setAuthCookies(user: User & { sessionToken: string }): void {
+export function setAuthCookies(user: User): void {
   if (typeof window === "undefined") return;
   
   const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toUTCString();

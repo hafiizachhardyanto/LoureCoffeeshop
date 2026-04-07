@@ -1,22 +1,87 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db, collection, getDocs, doc, setDoc, Timestamp, query, orderBy } from "@/lib/firebase";
-import type { MenuItem } from "@/types";
+
+const PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+
+async function firestoreQuery(collection: string, orderByField?: string, orderDirection?: string) {
+  const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents:runQuery`;
+  
+  const body: any = {
+    structuredQuery: {
+      from: [{ collectionId: collection }],
+    }
+  };
+
+  if (orderByField) {
+    body.structuredQuery.orderBy = [{
+      field: { fieldPath: orderByField },
+      direction: orderDirection === 'desc' ? 'DESCENDING' : 'ASCENDING'
+    }];
+  }
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  return response.json();
+}
+
+async function firestoreSet(collection: string, docId: string, data: any) {
+  const url = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/${collection}/${docId}`;
+  
+  const fields: any = {};
+  Object.keys(data).forEach(key => {
+    if (typeof data[key] === 'string') {
+      fields[key] = { stringValue: data[key] };
+    } else if (typeof data[key] === 'number') {
+      fields[key] = { integerValue: data[key] };
+    } else if (typeof data[key] === 'boolean') {
+      fields[key] = { booleanValue: data[key] };
+    }
+  });
+
+  const response = await fetch(url, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields }),
+  });
+
+  return response.json();
+}
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const availableOnly = searchParams.get("available") === "true";
 
-    const q = query(collection(db, "menu"), orderBy("createdAt", "desc"));
-    const querySnapshot = await getDocs(q);
+    const queryResult = await firestoreQuery("menu", "createdAt", "desc");
     
-    let items = querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as MenuItem[];
+    let items: any[] = [];
+    
+    if (queryResult && Array.isArray(queryResult)) {
+      items = queryResult
+        .filter((doc: any) => doc.document)
+        .map((doc: any) => {
+          const data = doc.document.fields;
+          return {
+            id: doc.document.name.split('/').pop(),
+            name: data.name?.stringValue,
+            description: data.description?.stringValue,
+            price: parseInt(data.price?.integerValue),
+            category: data.category?.stringValue,
+            stock: parseInt(data.stock?.integerValue),
+            rating: parseFloat(data.rating?.doubleValue || data.rating?.integerValue),
+            isAvailable: data.isAvailable?.booleanValue,
+            imageUrl: data.imageUrl?.stringValue,
+            createdAt: data.createdAt?.stringValue,
+            updatedAt: data.updatedAt?.stringValue,
+          };
+        });
+    }
 
     if (availableOnly) {
-      items = items.filter((item) => item.isAvailable && item.stock > 0);
+      items = items.filter((item: any) => item.isAvailable && item.stock > 0);
     }
 
     return NextResponse.json({
@@ -44,9 +109,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const id = `menu_${Timestamp.now().seconds}_${Math.random().toString(36).substring(2, 9)}`;
+    const id = `menu_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     
-    await setDoc(doc(db, "menu", id), {
+    await firestoreSet("menu", id, {
       id,
       name,
       description: description || "",

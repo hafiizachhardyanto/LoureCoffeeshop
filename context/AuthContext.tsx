@@ -32,12 +32,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchUserData = async (uid: string) => {
     try {
-      const userDoc = await getDoc(doc(db, "users", uid));
+      const userDocRef = doc(db, "users", uid);
+      const userDoc = await getDoc(userDocRef);
       if (userDoc.exists()) {
-        const userData = userDoc.data() as Omit<User, "id">;
-        setUser({ id: userDoc.id, ...userData });
+        const userData = userDoc.data() as User;
+        setUser(userData);
         
-        await updateDoc(doc(db, "users", uid), {
+        await updateDoc(userDocRef, {
           lastLoginAt: new Date().toISOString(),
         });
       }
@@ -47,10 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    if (!auth) {
-      setLoading(false);
-      return;
-    }
+    if (!auth) return;
 
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       setFirebaseUser(fbUser);
